@@ -1,495 +1,485 @@
-// ===== Setup =====
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const muteButton = document.getElementById("mute");
+// ===== Stress levels (the same bands Garmin uses) =====
+const LEVELS = [
+  { name: "Rest", color: "var(--rest)", min: 0, max: 25 },
+  { name: "Low", color: "var(--low)", min: 26, max: 50 },
+  { name: "Medium", color: "var(--medium)", min: 51, max: 75 },
+  { name: "High", color: "var(--high)", min: 76, max: 100 },
+];
 
-const WIDTH = canvas.width;
-const HEIGHT = canvas.height;
-const GROUND_HEIGHT = 80;
+// Labels for the "I feel…" options, in the same order as LEVELS
+const FELT_LABELS = ["Calm / resting", "Fine / a little stressed", "Moderately stressed", "Very stressed"];
 
-// Rice University colors
-const RICE_BLUE = "#00205b";
-const RICE_GRAY = "#7c7e7f";
+// How wide the likely range is (+/-) for each confidence level
+const SPREAD = { high: 4, moderate: 8, low: 13 };
 
-// Tweak these numbers to change how the game feels.
-// Speeds are in pixels per second, so the game runs the same on any screen.
-const GRAVITY = 1500;      // how fast the owl falls
-const FLAP_STRENGTH = 450; // how high one flap sends the owl
-const PIPE_SPEED = 160;    // how fast columns move left
-const PIPE_WIDTH = 60;
-const PIPE_GAP = 160;      // space between top and bottom column
-const PIPE_INTERVAL = 1.5; // seconds between new columns
+// How many check-ins before the app says it has personalized your stress
+const LEARN_GOAL = 5;
 
-// The game is always in one of three states
-let state = "ready"; // "ready" -> "playing" -> "over"
+function levelIndex(value) {
+  return LEVELS.findIndex((level) => value <= level.max);
+}
 
-let bird;
-let pipes;
-let score;
-let pipeTimer;
-let groundOffset = 0;
-let skylineOffset = 0;
-let best = loadBest();
+// ===== Fake data for today =====
+// One reading every 15 minutes from midnight to 2:45 PM (60 readings).
+// A seeded random number generator makes the chart look the same every time.
+function seededRandom(seed) {
+  return function () {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+}
 
-// Stars for the night sky, placed once at random
-const stars = [];
-for (let i = 0; i < 40; i++) {
-  stars.push({
-    x: Math.random() * WIDTH,
-    y: Math.random() * (HEIGHT - GROUND_HEIGHT - 150),
-    size: Math.random() * 1.5 + 0.5,
+const random = seededRandom(42);
+const readings = [];
+
+for (let i = 0; i < 60; i++) {
+  const hour = i / 4;
+  let value;
+  let confidence = "moderate";
+  let reason = "Normal signal quality from your watch.";
+
+  if (hour < 6.5) {
+    // Asleep: resting stress, very reliable
+    value = 12 + random() * 12;
+    confidence = "high";
+    reason = "You were still and your watch had a good signal, so this reading is reliable.";
+  } else if (hour >= 7 && hour < 8) {
+    // Morning run: Garmin doesn't measure stress during activities
+    value = null;
+  } else if (hour >= 8 && hour < 8.5) {
+    value = 45 + random() * 15;
+    confidence = "low";
+    reason = "You had just finished an activity, so your heart rate was still recovering. That makes stress harder to read.";
+  } else if (hour < 11) {
+    value = 28 + random() * 20;
+  } else {
+    value = 45 + random() * 25;
+  }
+
+  readings.push({
+    minutes: i * 15,
+    value: value === null ? null : Math.round(value),
+    confidence: confidence,
+    reason: reason,
   });
 }
 
-// ===== Sound effects =====
-// The sounds are made with the Web Audio API, so there are no sound files.
-// Browsers only allow sound after the player clicks or presses a key,
-// so the audio is set up on the first flap.
-let audio = null;
-let muted = loadMuted();
-updateMuteButton();
+// The latest reading matches the example: "Garmin says medium stress, I feel fine"
+const latest = readings[readings.length - 1];
+latest.value = 58;
+latest.reason = "Based on the last 15 minutes. You moved around a bit, which makes the reading less certain.";
 
-function startAudio() {
-  if (!audio) {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) audio = new AudioContext();
-  }
-  if (audio && audio.state === "suspended") audio.resume();
+function likelyRange(reading) {
+  const spread = reading === latest ? 9 : SPREAD[reading.confidence];
+  return {
+    low: Math.max(0, reading.value - spread),
+    high: Math.min(100, reading.value + spread),
+  };
 }
 
-// Play one tone that slides from startFreq to endFreq
-function tone(startFreq, endFreq, duration, type, volume, delay = 0) {
-  if (!audio || muted) return;
-
-  const start = audio.currentTime + delay;
-  const osc = audio.createOscillator();
-  const gain = audio.createGain();
-
-  osc.type = type;
-  osc.frequency.setValueAtTime(startFreq, start);
-  osc.frequency.exponentialRampToValueAtTime(endFreq, start + duration);
-
-  // Fade out so the sound doesn't click when it stops
-  gain.gain.setValueAtTime(volume, start);
-  gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
-
-  osc.connect(gain);
-  gain.connect(audio.destination);
-  osc.start(start);
-  osc.stop(start + duration);
+function formatTime(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const suffix = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return h12 + ":" + String(m).padStart(2, "0") + " " + suffix;
 }
 
-function playFlap() {
-  tone(400, 700, 0.1, "triangle", 0.2);
-}
+// ===== Saved state =====
+// Feedback is saved in the browser so the demo remembers it after a refresh.
+const SAMPLE_HISTORY = [
+  { when: "Yesterday, 8:15 PM", measured: 2, value: 74, felt: 1, reasons: ["Excited / happy"] },
+  { when: "3 days ago, 10:30 AM", measured: 2, value: 61, felt: 0, reasons: ["Caffeine"] },
+];
 
-function playScore() {
-  tone(880, 880, 0.1, "square", 0.08);
-  tone(1320, 1320, 0.15, "square", 0.08, 0.08);
-}
+let feedback = loadFeedback(); // { readingIndex: { felt, reasons, note } }
+let selected = readings.length - 1;
 
-function playHit() {
-  tone(180, 40, 0.3, "sawtooth", 0.25);
-}
-
-// A sad owl "hoo-hoo" when the game ends
-function playHoot() {
-  tone(420, 360, 0.25, "sine", 0.3, 0.35);
-  tone(400, 300, 0.4, "sine", 0.3, 0.65);
-}
-
-function toggleMute() {
-  muted = !muted;
-  updateMuteButton();
+function loadFeedback() {
   try {
-    localStorage.setItem("flappyMuted", muted ? "1" : "0");
+    return JSON.parse(localStorage.getItem("stressFeedback")) || {};
   } catch (e) {
-    // Saving isn't allowed, so the setting just won't be remembered
+    return {};
   }
 }
 
-function loadMuted() {
+function saveFeedback() {
   try {
-    return localStorage.getItem("flappyMuted") === "1";
+    localStorage.setItem("stressFeedback", JSON.stringify(feedback));
   } catch (e) {
-    return false;
+    // Saving isn't allowed, so feedback only lasts until the page reloads
   }
 }
 
-function updateMuteButton() {
-  muteButton.textContent = muted ? "Sound: Off" : "Sound: On";
+function checkInCount() {
+  return SAMPLE_HISTORY.length + Object.keys(feedback).length;
 }
 
-// ===== Game state =====
-function resetGame() {
-  bird = { x: 100, y: HEIGHT / 2, radius: 15, velocity: 0, flapTime: 0 };
-  pipes = [];
-  score = 0;
-  pipeTimer = 0;
-  state = "ready";
+// ===== Navigation =====
+const $ = (id) => document.getElementById(id);
+
+function showScreen(name) {
+  $("screen-myday").classList.toggle("hidden", name !== "myday");
+  $("screen-stress").classList.toggle("hidden", name !== "stress");
+  if (name === "stress") $("screen-stress").querySelector(".scroll").scrollTop = 0;
+  renderAll();
 }
 
-function flap() {
-  startAudio();
+$("stress-card").addEventListener("click", () => showScreen("stress"));
+$("back-btn").addEventListener("click", () => showScreen("myday"));
 
-  if (state === "ready") {
-    state = "playing";
-  }
-  if (state === "playing") {
-    bird.velocity = -FLAP_STRENGTH;
-    bird.flapTime = 0.2; // seconds the wing stays raised
-    playFlap();
-  } else if (state === "over") {
-    resetGame();
-  }
+// Anything that isn't part of this prototype shows a small message instead
+let toastTimer;
+function toast(message) {
+  $("toast").textContent = message;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 1800);
 }
 
-function addPipe() {
-  // Pick a random height for the gap, keeping it away from the edges
-  const margin = 60;
-  const minTop = margin;
-  const maxTop = HEIGHT - GROUND_HEIGHT - PIPE_GAP - margin;
-  const gapTop = minTop + Math.random() * (maxTop - minTop);
+document.querySelectorAll("[data-todo]").forEach((el) => {
+  el.addEventListener("click", () => toast(el.dataset.todo + " isn't part of this prototype"));
+});
 
-  pipes.push({ x: WIDTH, gapTop: gapTop, passed: false });
+// ===== Drawing helpers =====
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const key in attrs) el.setAttribute(key, attrs[key]);
+  return el;
 }
 
-// The high score is saved in the browser so it's still there next visit
-function loadBest() {
-  try {
-    return Number(localStorage.getItem("flappyBest")) || 0;
-  } catch (e) {
-    return 0;
-  }
+function barColor(reading) {
+  return reading.value === null ? "var(--activity)" : LEVELS[levelIndex(reading.value)].color;
 }
 
-function saveBest() {
-  try {
-    localStorage.setItem("flappyBest", best);
-  } catch (e) {
-    // Saving isn't allowed (e.g. private browsing), so just skip it
-  }
+// ===== My Day screen =====
+function renderMyDay() {
+  $("myday-stress-value").textContent = latest.value;
+  $("myday-stress-level").textContent = LEVELS[levelIndex(latest.value)].name + " · Now";
+  $("myday-flag-pill").classList.toggle("hidden", Object.keys(feedback).length === 0);
+
+  const chart = $("myday-stress-chart");
+  chart.innerHTML = "";
+  const barWidth = 160 / readings.length;
+  readings.forEach((reading, i) => {
+    const h = reading.value === null ? 30 : Math.max(2, (reading.value / 100) * 48);
+    chart.appendChild(svgEl("rect", {
+      x: i * barWidth, y: 50 - h, width: barWidth - 0.8, height: h, fill: barColor(reading),
+    }));
+  });
 }
 
-function gameOver() {
-  state = "over";
-  playHit();
-  playHoot();
-  if (score > best) {
-    best = score;
-    saveBest();
-  }
-}
+// ===== Stress screen =====
+function renderReading() {
+  const reading = readings[selected];
+  $("reading-time").textContent = (reading === latest ? "Now · " : "") + formatTime(reading.minutes);
 
-// ===== Update: move everything forward by dt seconds =====
-function update(dt) {
-  bird.flapTime = Math.max(0, bird.flapTime - dt);
+  const isActivity = reading.value === null;
+  $("feedback-btn").disabled = isActivity;
+  $("feedback-btn").style.opacity = isActivity ? 0.4 : 1;
+  document.querySelector(".range-block").classList.toggle("hidden", isActivity);
 
-  // Scroll the ground and skyline unless the owl has crashed
-  if (state !== "over") {
-    groundOffset = (groundOffset + PIPE_SPEED * dt) % 40;
-    skylineOffset = (skylineOffset + PIPE_SPEED * 0.2 * dt) % 240;
-  }
-
-  if (state === "ready") {
-    // Bob gently up and down while waiting to start
-    bird.y = HEIGHT / 2 + Math.sin(performance.now() / 300) * 8;
+  if (isActivity) {
+    $("reading-value").textContent = "—";
+    $("reading-level").textContent = "Activity";
+    $("reading-level").style.color = "var(--muted)";
+    $("user-flag").classList.add("hidden");
+    $("feedback-btn-title").textContent = "Doesn't feel right?";
+    $("feedback-btn-sub").textContent = "Stress isn't measured during activities";
     return;
   }
 
-  // Gravity pulls the owl down (it keeps falling after a crash too)
-  bird.velocity += GRAVITY * dt;
-  bird.y += bird.velocity * dt;
+  const level = LEVELS[levelIndex(reading.value)];
+  $("reading-value").textContent = reading.value;
+  $("reading-level").textContent = level.name;
+  $("reading-level").style.color = level.color;
 
-  const groundY = HEIGHT - GROUND_HEIGHT;
-  if (bird.y + bird.radius > groundY) {
-    bird.y = groundY - bird.radius;
-    if (state === "playing") gameOver();
+  // Likely range (the confidence interval)
+  const range = likelyRange(reading);
+  const lowLevel = LEVELS[levelIndex(range.low)].name;
+  const highLevel = LEVELS[levelIndex(range.high)].name;
+  $("range-text").textContent = range.low + "–" + range.high;
+  $("confidence-text").textContent =
+    reading.confidence.charAt(0).toUpperCase() + reading.confidence.slice(1) + " confidence";
+
+  $("range-band").style.left = range.low + "%";
+  $("range-band").style.width = range.high - range.low + "%";
+  $("dim-left").style.width = range.low + "%";
+  $("dim-right").style.width = 100 - range.high + "%";
+  $("range-dot").style.left = reading.value + "%";
+
+  let note = reading.reason;
+  if (lowLevel !== highLevel) {
+    note += " The range covers both " + lowLevel + " and " + highLevel + ", so it could be either.";
   }
-  if (bird.y - bird.radius < 0) {
-    bird.y = bird.radius;
-    bird.velocity = 0;
+  $("range-note").textContent = note;
+
+  // Show what the user said about this reading, if anything
+  const fb = feedback[selected];
+  $("user-flag").classList.toggle("hidden", !fb);
+  if (fb) {
+    let text = "⚑ You said you felt <strong>" + FELT_LABELS[fb.felt].toLowerCase() + "</strong>";
+    if (fb.reasons.length) text += " · " + fb.reasons.join(", ");
+    if (fb.note) text += " · “" + escapeHtml(fb.note) + "”";
+    $("user-flag").innerHTML = text;
   }
 
-  if (state !== "playing") return;
+  $("feedback-btn-title").textContent = fb ? "Edit your feedback" : "Doesn't feel right?";
+  $("feedback-btn-sub").textContent = fb
+    ? "Change how you said you felt at " + formatTime(reading.minutes)
+    : "Tell us how you actually feel so Garmin can learn";
+}
 
-  // Spawn a new column every PIPE_INTERVAL seconds
-  pipeTimer += dt;
-  if (pipeTimer >= PIPE_INTERVAL) {
-    pipeTimer = 0;
-    addPipe();
-  }
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
 
-  for (const pipe of pipes) {
-    pipe.x -= PIPE_SPEED * dt;
+function renderChart() {
+  const chart = $("stress-chart");
+  chart.innerHTML = "";
 
-    // Score a point once the owl is past the column
-    if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
-      pipe.passed = true;
-      score++;
-      playScore();
+  // Plot area inside the 340 x 150 SVG
+  const left = 24;
+  const right = 336;
+  const top = 14;
+  const bottom = 124;
+  const slot = (right - left) / readings.length;
+  const yFor = (value) => bottom - (value / 100) * (bottom - top);
+
+  // Grid lines at each stress band
+  [25, 50, 75, 100].forEach((v) => {
+    chart.appendChild(svgEl("line", {
+      x1: left, x2: right, y1: yFor(v), y2: yFor(v), stroke: "#2c2c2e", "stroke-width": 1,
+    }));
+    const label = svgEl("text", { x: left - 6, y: yFor(v) + 3, "text-anchor": "end", fill: "#6c6c70", "font-size": 9 });
+    label.textContent = v;
+    chart.appendChild(label);
+  });
+
+  // Time labels
+  [["12A", 0], ["6A", 24], ["12P", 48], ["3P", 60]].forEach(([text, i]) => {
+    const anchor = i === 0 ? "start" : i === readings.length ? "end" : "middle";
+    const label = svgEl("text", { x: left + i * slot, y: 142, "text-anchor": anchor, fill: "#6c6c70", "font-size": 9 });
+    label.textContent = text;
+    chart.appendChild(label);
+  });
+
+  // Highlight behind the selected bar
+  chart.appendChild(svgEl("rect", {
+    x: left + selected * slot - 1, y: top - 10, width: slot + 2, height: bottom - top + 10,
+    fill: "rgba(255,255,255,0.12)", rx: 2,
+  }));
+
+  readings.forEach((reading, i) => {
+    const x = left + i * slot;
+    const value = reading.value === null ? 70 : Math.max(3, reading.value);
+    chart.appendChild(svgEl("rect", {
+      x: x + 0.5, y: yFor(value), width: slot - 1, height: bottom - yFor(value),
+      fill: barColor(reading), opacity: i === selected ? 1 : 0.8,
+    }));
+
+    // Small flag above readings the user has flagged
+    if (feedback[i]) {
+      const fx = x + slot / 2;
+      const fy = yFor(value) - 12;
+      chart.appendChild(svgEl("path", {
+        d: `M${fx} ${fy + 10} V${fy} h6 l-2 2.5 l2 2.5 h-6`,
+        stroke: "var(--accent)", fill: "var(--accent)", "stroke-width": 1.2,
+      }));
     }
+  });
 
-    if (hitsPipe(pipe)) {
-      gameOver();
-      break;
+  // Whisker showing the likely range on the selected bar
+  const sel = readings[selected];
+  if (sel.value !== null) {
+    const range = likelyRange(sel);
+    const cx = left + selected * slot + slot / 2;
+    chart.appendChild(svgEl("path", {
+      d: `M${cx - 3} ${yFor(range.high)} h6 M${cx} ${yFor(range.high)} V${yFor(range.low)} M${cx - 3} ${yFor(range.low)} h6`,
+      stroke: "#fff", "stroke-width": 1.5, fill: "none",
+    }));
+  }
+
+  // Invisible, full-height tap targets make the thin bars easy to hit
+  readings.forEach((reading, i) => {
+    const hit = svgEl("rect", {
+      x: left + i * slot, y: 0, width: slot, height: 150, fill: "transparent", style: "cursor:pointer",
+    });
+    hit.addEventListener("click", () => {
+      selected = i;
+      renderStress();
+    });
+    chart.appendChild(hit);
+  });
+}
+
+function renderBreakdown() {
+  const counts = [0, 0, 0, 0];
+  readings.forEach((r) => {
+    if (r.value !== null) counts[levelIndex(r.value)]++;
+  });
+
+  $("breakdown").innerHTML = LEVELS.map((level, i) => {
+    const minutes = counts[i] * 15;
+    const time = Math.floor(minutes / 60) + "h " + (minutes % 60) + "m";
+    return `<div><i style="background:${level.color}"></i>${time}<span>${level.name}</span></div>`;
+  }).join("");
+}
+
+function renderLearning() {
+  const count = checkInCount();
+  const done = Math.min(count, LEARN_GOAL);
+  $("learn-count").textContent = done + " of " + LEARN_GOAL;
+  $("learn-bar").style.width = (done / LEARN_GOAL) * 100 + "%";
+  $("learn-text").textContent = count >= LEARN_GOAL
+    ? "Your stress readings now take your feedback into account. Keep flagging readings that feel off."
+    : "Flag " + (LEARN_GOAL - count) + " more reading" + (LEARN_GOAL - count === 1 ? "" : "s") +
+      " that don't match how you feel and Garmin will start adjusting your readings to you.";
+
+  // Today's flags first, then the sample history
+  const todays = Object.keys(feedback).map(Number).sort((a, b) => b - a).map((i) => ({
+    when: "Today, " + formatTime(readings[i].minutes),
+    measured: levelIndex(readings[i].value),
+    value: readings[i].value,
+    felt: feedback[i].felt,
+  }));
+
+  $("history").innerHTML = todays.concat(SAMPLE_HISTORY).map((item) =>
+    `<li><span>${item.when}</span><span>Measured ${LEVELS[item.measured].name} (${item.value}) → you felt ${FELT_LABELS[item.felt].toLowerCase()}</span></li>`
+  ).join("");
+}
+
+function renderStress() {
+  renderReading();
+  renderChart();
+  renderBreakdown();
+  renderLearning();
+}
+
+function renderAll() {
+  renderMyDay();
+  renderStress();
+}
+
+// ===== Feedback sheet =====
+let felt = null;
+
+function openSheet() {
+  const reading = readings[selected];
+  if (reading.value === null) return;
+
+  const measured = levelIndex(reading.value);
+  const existing = feedback[selected];
+
+  $("sheet-measured").innerHTML = "Garmin measured <strong>" + LEVELS[measured].name +
+    " (" + reading.value + ")</strong> at " + formatTime(reading.minutes);
+
+  // Mark which option matches Garmin's reading
+  document.querySelectorAll("#felt-options button").forEach((btn) => {
+    const old = btn.querySelector(".measured-tag");
+    if (old) old.remove();
+    if (Number(btn.dataset.level) === measured) {
+      btn.insertAdjacentHTML("beforeend", '<span class="measured-tag">Garmin\'s reading</span>');
     }
-  }
+  });
 
-  // Forget columns that have scrolled off the left side
-  pipes = pipes.filter((pipe) => pipe.x + PIPE_WIDTH > 0);
+  // Fill in any earlier answer so it can be edited
+  felt = existing ? existing.felt : null;
+  document.querySelectorAll("#felt-options button").forEach((btn) => {
+    btn.classList.toggle("selected", Number(btn.dataset.level) === felt);
+  });
+  document.querySelectorAll("#reason-options button").forEach((btn) => {
+    btn.classList.toggle("selected", !!existing && existing.reasons.includes(btn.textContent));
+  });
+  $("note").value = existing ? existing.note : "";
+  updateSendButton();
+
+  $("sheet-form").classList.remove("hidden");
+  $("sheet-thanks").classList.add("hidden");
+  $("backdrop").classList.remove("hidden");
 }
 
-// Is the owl touching this column? We treat the owl as a square for simplicity.
-function hitsPipe(pipe) {
-  const r = bird.radius - 3; // a little forgiveness
-  const insidePipeColumn = bird.x + r > pipe.x && bird.x - r < pipe.x + PIPE_WIDTH;
-  const outsideGap = bird.y - r < pipe.gapTop || bird.y + r > pipe.gapTop + PIPE_GAP;
-  return insidePipeColumn && outsideGap;
+function closeSheet() {
+  $("backdrop").classList.add("hidden");
 }
 
-// ===== Draw: paint the current frame =====
-function draw() {
-  drawSky();
-  drawSkyline();
-  drawPipes();
-  drawGround();
-  drawBird();
-  drawText();
+function updateSendButton() {
+  const measured = levelIndex(readings[selected].value);
+  $("send-btn").disabled = felt === null;
+  $("send-btn").textContent = felt === measured ? "Confirm reading is right" : "Send feedback";
 }
 
-function drawSky() {
-  // Night sky, since owls come out at night
-  const sky = ctx.createLinearGradient(0, 0, 0, HEIGHT - GROUND_HEIGHT);
-  sky.addColorStop(0, "#000c26");
-  sky.addColorStop(1, "#1d3f7a");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-  ctx.fillStyle = "white";
-  for (const star of stars) {
-    ctx.fillRect(star.x, star.y, star.size, star.size);
-  }
-
-  // Moon
-  ctx.fillStyle = "#f2f0dc";
-  ctx.beginPath();
-  ctx.arc(320, 70, 26, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-// Silhouette of arched campus buildings that scrolls slowly in the background
-function drawSkyline() {
-  const baseY = HEIGHT - GROUND_HEIGHT;
-  ctx.fillStyle = "#0a1a3d";
-
-  for (let x = -skylineOffset; x < WIDTH; x += 240) {
-    // A long hall with a row of arches
-    ctx.fillRect(x, baseY - 70, 150, 70);
-    // A tower with a pointed roof
-    ctx.fillRect(x + 160, baseY - 120, 40, 120);
-    ctx.beginPath();
-    ctx.moveTo(x + 155, baseY - 120);
-    ctx.lineTo(x + 180, baseY - 150);
-    ctx.lineTo(x + 205, baseY - 120);
-    ctx.fill();
-  }
-
-  // Lit-up arches in the halls
-  ctx.fillStyle = "#3a5a8f";
-  for (let x = -skylineOffset; x < WIDTH; x += 240) {
-    for (let i = 0; i < 5; i++) {
-      const ax = x + 12 + i * 28;
-      ctx.beginPath();
-      ctx.arc(ax + 8, baseY - 40, 8, Math.PI, 0);
-      ctx.lineTo(ax + 16, baseY - 15);
-      ctx.lineTo(ax, baseY - 15);
-      ctx.fill();
-    }
-  }
-}
-
-// The "pipes" are drawn as gray stone columns with Rice blue caps
-function drawPipes() {
-  for (const pipe of pipes) {
-    const bottomY = pipe.gapTop + PIPE_GAP;
-    const groundY = HEIGHT - GROUND_HEIGHT;
-
-    // Column shafts
-    ctx.fillStyle = "#a9abac";
-    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.gapTop);
-    ctx.fillRect(pipe.x, bottomY, PIPE_WIDTH, groundY - bottomY);
-
-    // Fluting: vertical grooves down each column
-    ctx.fillStyle = RICE_GRAY;
-    for (let i = 1; i < 4; i++) {
-      const gx = pipe.x + i * (PIPE_WIDTH / 4) - 2;
-      ctx.fillRect(gx, 0, 4, pipe.gapTop - 20);
-      ctx.fillRect(gx, bottomY + 20, 4, groundY - bottomY - 20);
-    }
-
-    // Caps at the open ends
-    ctx.fillStyle = RICE_BLUE;
-    ctx.fillRect(pipe.x - 6, pipe.gapTop - 20, PIPE_WIDTH + 12, 20);
-    ctx.fillRect(pipe.x - 6, bottomY, PIPE_WIDTH + 12, 20);
-    ctx.fillStyle = RICE_GRAY;
-    ctx.fillRect(pipe.x - 6, pipe.gapTop - 4, PIPE_WIDTH + 12, 4);
-    ctx.fillRect(pipe.x - 6, bottomY, PIPE_WIDTH + 12, 4);
-  }
-}
-
-function drawGround() {
-  const groundY = HEIGHT - GROUND_HEIGHT;
-
-  // Grass of the campus quad
-  ctx.fillStyle = "#2f6b34";
-  ctx.fillRect(0, groundY, WIDTH, GROUND_HEIGHT);
-
-  // A brick path runs along the bottom
-  ctx.fillStyle = "#9c4a35";
-  ctx.fillRect(0, groundY + 30, WIDTH, GROUND_HEIGHT - 30);
-
-  // Moving stripes make the ground look like it's scrolling
-  ctx.fillStyle = "#3d8443";
-  for (let x = -groundOffset; x < WIDTH; x += 40) {
-    ctx.fillRect(x, groundY, 20, 8);
-  }
-  ctx.fillStyle = "#7f3a29";
-  for (let x = -groundOffset; x < WIDTH; x += 40) {
-    ctx.fillRect(x, groundY + 52, 2, 28);
-    ctx.fillRect(x + 20, groundY + 30, 2, 22);
-  }
-  ctx.fillRect(0, groundY + 51, WIDTH, 2);
-}
-
-function drawBird() {
-  ctx.save();
-  ctx.translate(bird.x, bird.y);
-
-  // Tilt the owl up when rising and down when falling
-  const tilt = Math.max(-0.5, Math.min(1.2, bird.velocity / 600));
-  ctx.rotate(tilt);
-
-  const r = bird.radius;
-
-  // Ear tufts (gray so they stand out against the night sky)
-  ctx.fillStyle = "#c0c2c4";
-  ctx.beginPath();
-  ctx.moveTo(-11, -r + 6);
-  ctx.lineTo(-9, -r - 9);
-  ctx.lineTo(-1, -r + 2);
-  ctx.moveTo(2, -r + 2);
-  ctx.lineTo(10, -r - 9);
-  ctx.lineTo(12, -r + 6);
-  ctx.fill();
-
-  // Body
-  ctx.fillStyle = RICE_BLUE;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, r, r + 2, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "#c0c2c4";
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
-
-  // Gray belly
-  ctx.fillStyle = "#c0c2c4";
-  ctx.beginPath();
-  ctx.ellipse(3, 7, 8, 8, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Wing: raised just after a flap, lowered otherwise
-  const wingAngle = bird.flapTime > 0 ? -0.9 : 0.4;
-  ctx.save();
-  ctx.translate(-6, 3);
-  ctx.rotate(wingAngle);
-  ctx.fillStyle = RICE_GRAY;
-  ctx.beginPath();
-  ctx.ellipse(-3, 0, 8, 4.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  // Big owl eyes
-  for (const ex of [-1, 9]) {
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(ex, -5, 5.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = state === "over" ? "#333" : "black";
-    ctx.beginPath();
-    ctx.arc(ex + 1.5, -5, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Beak
-  ctx.fillStyle = "#f2a900";
-  ctx.beginPath();
-  ctx.moveTo(2, 0);
-  ctx.lineTo(8, 0);
-  ctx.lineTo(5, 6);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawText() {
-  ctx.textAlign = "center";
-  ctx.fillStyle = "white";
-  ctx.strokeStyle = RICE_BLUE;
-  ctx.lineWidth = 5;
-
-  if (state === "playing") {
-    outlinedText(score, WIDTH / 2, 80, 48);
-  } else if (state === "ready") {
-    outlinedText("Flappy Owl", WIDTH / 2, 170, 44);
-    outlinedText("Go Owls!", WIDTH / 2, 215, 26);
-    outlinedText("Tap or press Space", WIDTH / 2, 380, 22);
-  } else if (state === "over") {
-    outlinedText("Game Over", WIDTH / 2, 180, 44);
-    outlinedText("Score: " + score, WIDTH / 2, 250, 28);
-    outlinedText("Best: " + best, WIDTH / 2, 290, 28);
-    outlinedText("Tap to play again", WIDTH / 2, 380, 22);
-  }
-}
-
-function outlinedText(text, x, y, size) {
-  ctx.font = "bold " + size + "px Georgia, serif";
-  ctx.strokeText(text, x, y);
-  ctx.fillText(text, x, y);
-}
-
-// ===== Controls =====
-document.addEventListener("keydown", (event) => {
-  if (event.code === "Space" || event.code === "ArrowUp") {
-    event.preventDefault(); // stop the page from scrolling
-    flap();
-  } else if (event.code === "KeyM") {
-    toggleMute();
-  }
+document.querySelectorAll("#felt-options button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    felt = Number(btn.dataset.level);
+    document.querySelectorAll("#felt-options button").forEach((b) => b.classList.toggle("selected", b === btn));
+    updateSendButton();
+  });
 });
 
-canvas.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
-  flap();
+document.querySelectorAll("#reason-options button").forEach((btn) => {
+  btn.addEventListener("click", () => btn.classList.toggle("selected"));
 });
 
-muteButton.addEventListener("click", () => {
-  toggleMute();
-  muteButton.blur(); // so Space flaps instead of pressing the button again
+$("feedback-btn").addEventListener("click", openSheet);
+$("cancel-btn").addEventListener("click", closeSheet);
+$("done-btn").addEventListener("click", closeSheet);
+$("backdrop").addEventListener("click", (event) => {
+  if (event.target === $("backdrop")) closeSheet();
 });
 
-// ===== Game loop: runs about 60 times per second =====
-let lastTime = performance.now();
+$("send-btn").addEventListener("click", () => {
+  const reading = readings[selected];
+  const measured = levelIndex(reading.value);
+  const before = checkInCount();
 
-function loop(now) {
-  // dt = seconds since the last frame (capped so a paused tab doesn't jump)
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
+  feedback[selected] = {
+    felt: felt,
+    reasons: [...document.querySelectorAll("#reason-options button.selected")].map((b) => b.textContent),
+    note: $("note").value.trim(),
+  };
+  saveFeedback();
 
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
-}
+  // Thank-you message depends on what the user said
+  let message;
+  if (felt < measured) {
+    message = "You felt calmer than Garmin measured. We'll use this to tune how your heart rate is read as stress.";
+  } else if (felt > measured) {
+    message = "You felt more stressed than Garmin measured. We'll use this to tune how your heart rate is read as stress.";
+  } else {
+    message = "Thanks for confirming this reading. Confirmations help Garmin learn too.";
+  }
+  $("thanks-text").textContent = message;
 
-resetGame();
-requestAnimationFrame(loop);
+  const count = checkInCount();
+  const done = Math.min(count, LEARN_GOAL);
+  $("thanks-progress").textContent = count >= LEARN_GOAL
+    ? "Your stress readings are now personalized to you."
+    : done + " of " + LEARN_GOAL + " check-ins until your readings are personalized.";
+
+  // Animate the progress bar from the old count to the new one
+  $("thanks-bar").style.transition = "none";
+  $("thanks-bar").style.width = (Math.min(before, LEARN_GOAL) / LEARN_GOAL) * 100 + "%";
+  $("sheet-form").classList.add("hidden");
+  $("sheet-thanks").classList.remove("hidden");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    $("thanks-bar").style.transition = "";
+    $("thanks-bar").style.width = (done / LEARN_GOAL) * 100 + "%";
+  }));
+
+  renderAll();
+});
+
+$("reset-btn").addEventListener("click", () => {
+  feedback = {};
+  saveFeedback();
+  selected = readings.length - 1;
+  renderAll();
+  toast("Demo reset");
+});
+
+renderAll();
