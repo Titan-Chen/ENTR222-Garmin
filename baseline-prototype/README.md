@@ -6,14 +6,20 @@ This is the **baseline**: it shows how the app works *today*, so user tests can 
 
 Class project. Not affiliated with or made by Garmin. All data is made up. No Garmin logos or image files are used.
 
-## Run it
+## Open it (no setup)
+
+Double-click **`baseline-prototype/Open Prototype.html`**. It opens in your browser with no Terminal or install. The whole prototype is in that one file, so you can also email or AirDrop it to user testers.
+
+## Run it for development
 
 ```bash
 cd baseline-prototype
 npm install
 npm run dev        # local dev server
-npm run build      # static build in baseline-prototype/dist
+npm run build      # static build in baseline-prototype/dist + refreshes "Open Prototype.html"
 ```
+
+After changing the code, run `npm run build` so the double-click file picks up your changes.
 
 The built site in `dist/` is committed, so it can also be opened through GitHub Pages at `<pages-url>/baseline-prototype/dist/` with no build step.
 
