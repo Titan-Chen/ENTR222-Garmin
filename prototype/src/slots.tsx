@@ -27,8 +27,8 @@ export type SlotName =
 export interface SlotEntry { feature: FeatureName; component: React.ComponentType<any> }
 
 export const registry: Record<SlotName, SlotEntry[]> = {
-  'home.top': [{ feature: 'workoutBuddies', component: BuddyStrip }],
-  'home.afterGlance': [],
+  'home.top': [],
+  'home.afterGlance': [{ feature: 'workoutBuddies', component: BuddyStrip }],
   'social.top': [],
   'connections.top': [],
   'metric.stress': [],

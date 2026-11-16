@@ -21,7 +21,7 @@ export const FEATURES = {
   feelsOff: false,
   weeklyHealth: false,
   strengthAware: false,
-  workoutBuddies: true,   // ON: "Friends Today" buddy strip on Home (src/features/buddy-strip)
+  workoutBuddies: true,   // ON: compact "Friends Today" row on Home, below At a Glance (src/features/buddy-strip)
   watchAlerts: false,
 };
 
