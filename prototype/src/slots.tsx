@@ -1,5 +1,6 @@
 import React from 'react';
 import { isOn, type FeatureName } from './features';
+import { BuddyStrip } from './features/buddy-strip/BuddyStrip';
 
 /**
  * SLOTS: named places in the baseline UI where new features plug in
@@ -26,7 +27,7 @@ export type SlotName =
 export interface SlotEntry { feature: FeatureName; component: React.ComponentType<any> }
 
 export const registry: Record<SlotName, SlotEntry[]> = {
-  'home.top': [],
+  'home.top': [{ feature: 'workoutBuddies', component: BuddyStrip }],
   'home.afterGlance': [],
   'social.top': [],
   'connections.top': [],

@@ -14,20 +14,23 @@
  *  - watchAlerts:      matching readiness glance + invite alerts on the watch
  *
  * Flags can also be turned on from the URL for user testing, e.g. ?features=dailyReadiness,workoutBuddies
+ * Use ?features=none to turn every flag off and see the plain current-app baseline.
  */
 export const FEATURES = {
   dailyReadiness: false,
   feelsOff: false,
   weeklyHealth: false,
   strengthAware: false,
-  workoutBuddies: false,
+  workoutBuddies: true,   // ON: "Friends Today" buddy strip on Home (src/features/buddy-strip)
   watchAlerts: false,
 };
 
 export type FeatureName = keyof typeof FEATURES;
 
 const fromUrl = new URLSearchParams(window.location.search).get('features');
-if (fromUrl) {
+if (fromUrl === 'none') {
+  for (const name of Object.keys(FEATURES)) FEATURES[name as FeatureName] = false;
+} else if (fromUrl) {
   for (const name of fromUrl.split(',')) {
     if (name in FEATURES) FEATURES[name as FeatureName] = true;
   }

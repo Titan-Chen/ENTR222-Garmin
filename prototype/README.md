@@ -3,6 +3,14 @@
 > **This is the working copy on `main`.** Edit it and add features here.
 > The untouched original ("how the app works today") is kept on the **`baseline-connect-prototype`** branch, in `baseline-prototype/`. Use that branch for the "current app" side of user tests, and don't edit it.
 
+## Features added in this working copy
+
+| Feature | Flag (`src/features.ts`) | Where | What it does |
+|---|---|---|---|
+| Friends Today buddy strip | `workoutBuddies` (on) | Top of Home (`src/features/buddy-strip/`) | Shows each connection's workout recommendation (Hard Workout / Easy Workout / Rest Day, from their Body Battery and Sleep Score), their steps, and a 👏 Cheer button. Tap a friend to open their profile. Carried over from the team's first friends mockup, using the same rule. |
+
+Everything else (including Training Readiness and the rest of Home) still matches the current Garmin Connect app. Add `?features=none` to the URL to hide all new features and see the plain baseline.
+
 ## About the starting point
 
 A clickable recreation of the **current** Garmin Connect iPhone app with a paired Forerunner-style watch next to it, built for the ENTR222 Garmin project (Titan Chen, Sara Kalra, Olivia Qiu, Michael Zito).
