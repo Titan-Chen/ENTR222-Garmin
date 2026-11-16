@@ -7,7 +7,7 @@
 
 | Feature | Flag (`src/features.ts`) | Where | What it does |
 |---|---|---|---|
-| Friends Today buddy strip | `workoutBuddies` (on) | Home, below At a Glance (`src/features/buddy-strip/`) | One slim row with each connection's avatar, first name and workout recommendation (Hard Workout / Easy Workout / Rest Day, from their Body Battery and Sleep Score). Tap a friend to open their profile. Carried over from the team's first friends mockup, using the same rule. |
+| Friends Today buddy strip | `workoutBuddies` (on) | Home, below At a Glance (`src/features/buddy-strip/`) | One slim row with each connection's avatar, first name and workout recommendation (Hard Workout / Easy Workout / Rest Day, from their Body Battery and Sleep Score). Tap a friend to cheer them on (their avatar pops and gets a 👏 badge, once per friend). See All opens Connections. Carried over from the team's first friends mockup, using the same rule. |
 
 Everything else (including Training Readiness and the rest of Home) still matches the current Garmin Connect app. Add `?features=none` to the URL to hide all new features and see the plain baseline.
 
