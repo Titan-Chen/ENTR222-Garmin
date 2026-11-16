@@ -1,0 +1,76 @@
+/*
+ * DESIGN TOKENS: the Garmin Connect (iOS, dark mode) look.
+ * New features should use these variables so they match the baseline.
+ * TODO verify against screenshot: exact hex values were matched by eye, not taken from Garmin assets.
+ */
+:root {
+  /* Surfaces */
+  --gc-bg: #000000;
+  --gc-surface: #1b1c1e;          /* cards */
+  --gc-surface-2: #262729;        /* nested rows, inputs */
+  --gc-surface-3: #333437;        /* pressed / chips */
+  --gc-separator: #2e2f31;
+  --gc-tabbar: #121314;
+
+  /* Text */
+  --gc-text: #ffffff;
+  --gc-text-2: #a7a9ac;           /* secondary labels */
+  --gc-text-3: #6f7276;           /* tertiary / axis labels */
+
+  /* Brand + actions */
+  --gc-blue: #11a9ed;             /* Garmin Connect action blue */
+  --gc-blue-dim: #0b6f9c;
+  --gc-red: #e5304c;
+  --gc-green: #30c77b;
+
+  /* Metric colors */
+  --m-steps: #11a9ed;
+  --m-body-battery: #1fa0ff;
+  --m-body-battery-drain: #ff8a3d;
+  --m-stress-rest: #1fa0ff;
+  --m-stress-low: #ffc75f;
+  --m-stress-med: #ff9f3d;
+  --m-stress-high: #ff6a2b;
+  --m-sleep: #7b61ff;
+  --m-sleep-deep: #0d47a1;
+  --m-sleep-light: #2f8af5;
+  --m-sleep-rem: #a855f7;
+  --m-sleep-awake: #f472b6;
+  --m-hr: #e5304c;
+  --m-hrv: #30c77b;
+  --m-intensity: #f5a623;
+  --m-calories: #ff5a36;
+  --m-readiness: #b05cff;
+  --zone-1: #8c8f93;
+  --zone-2: #11a9ed;
+  --zone-3: #30c77b;
+  --zone-4: #f5a623;
+  --zone-5: #e5304c;
+
+  /* Type */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 22px;
+  --fs-2xl: 30px;
+  --fs-3xl: 44px;
+
+  /* Spacing + shape */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --radius-card: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+
+  /* Device frames */
+  --phone-w: 390px;
+  --phone-h: 844px;
+  --watch-size: 300px;
+}
