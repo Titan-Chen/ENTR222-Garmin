@@ -7,9 +7,10 @@
 
 | Feature | Flag (`src/features.ts`) | Where | What it does |
 |---|---|---|---|
-| Friends Today buddy strip | `workoutBuddies` (on) | Home, below At a Glance (`src/features/buddy-strip/`) | One slim row with each connection's avatar, first name and workout recommendation (Hard Workout / Easy Workout / Rest Day, from their Body Battery and Sleep Score). Tap a friend to cheer them on (their avatar pops and gets a 👏 badge, once per friend). See All opens Connections. Carried over from the team's first friends mockup, using the same rule. |
+| Daily Readiness card | `dailyReadiness` (on) | Top of Home (`src/features/readiness/`) | One plain answer for today (Go hard / Go light / Recover) with a one-line reason and a suggestion. "Why?" expands the five factors behind it (Sleep, Body Battery, HRV, Recent Activity incl. lifting and pickup games, Stress). Simple weighted formula in `readiness.ts`; wording includes a wellness-not-medical note. |
+| Friends Today buddy strip | `workoutBuddies` (on) | Home, below At a Glance (`src/features/buddy-strip/`) | One slim row with each connection's avatar, first name and workout recommendation (Go hard / Go light / Recover, from their Body Battery and Sleep Score; same labels as the Daily Readiness card). Tap a friend to cheer them on (their avatar pops and gets a 👏 badge, once per friend). See All opens Connections. Carried over from the team's first friends mockup, using the same rule. |
 
-Everything else (including Training Readiness and the rest of Home) still matches the current Garmin Connect app. Add `?features=none` to the URL to hide all new features and see the plain baseline.
+Everything else (including Garmin's own Training Readiness and the rest of Home) still matches the current Garmin Connect app. Add `?features=none` to the URL to hide all new features and see the plain baseline.
 
 ## About the starting point
 

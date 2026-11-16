@@ -17,7 +17,7 @@
  * Use ?features=none to turn every flag off and see the plain current-app baseline.
  */
 export const FEATURES = {
-  dailyReadiness: false,
+  dailyReadiness: true,   // ON: Daily Readiness card at the top of Home (src/features/readiness)
   feelsOff: false,
   weeklyHealth: false,
   strengthAware: false,
