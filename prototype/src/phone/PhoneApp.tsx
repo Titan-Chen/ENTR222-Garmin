@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { House, Trophy, CalendarDays, Newspaper, Ellipsis, RefreshCw, Signal, Wifi, BatteryFull } from 'lucide-react';
 import { useStore } from '../store';
-import { NavProvider, useNav, type TabId } from './nav';
+import { NavProvider, useNav, scrollMemory, type TabId } from './nav';
 import { HomeScreen } from './screens/HomeScreen';
 import { MetricDetailScreen } from './screens/MetricDetailScreen';
 import { ActivityDetailScreen, ActivitiesListScreen } from './screens/ActivityScreens';
@@ -57,6 +57,29 @@ function StatusBar() {
   );
 }
 
+// Remembers how far each screen in the stack was scrolled, so going Back returns you
+// to the same spot (like iOS) instead of the top. Keyed by tab + route, so each tab keeps its own place.
+
+function ScreenFrame({ memoryKey, animate, children }: { memoryKey: string; animate: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const restored = scrollMemory.has(memoryKey);
+  useLayoutEffect(() => {
+    const frame = ref.current;
+    const el = frame?.querySelector<HTMLElement>('.scroll');
+    const saved = scrollMemory.get(memoryKey);
+    if (el && saved) el.scrollTop = saved;
+    // Save while scrolling (not on close), so a screen you go Back from is forgotten and reopens at the top.
+    const onScroll = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (t.classList?.contains('scroll')) scrollMemory.set(memoryKey, t.scrollTop);
+    };
+    frame?.addEventListener('scroll', onScroll, true);
+    return () => frame?.removeEventListener('scroll', onScroll, true);
+  }, [memoryKey]);
+  // Don't replay the slide-in animation when coming back to a screen you've already seen.
+  return <div ref={ref} className={`screen ${animate && !restored ? 'push-in' : ''}`}>{children}</div>;
+}
+
 function AppBody() {
   const nav = useNav();
   const { state } = useStore();
@@ -72,9 +95,9 @@ function AppBody() {
         </div>
       )}
       <div className="app-body">
-        <div key={`${nav.tab}-${top.key}`} className={`screen ${top.key ? 'push-in' : ''}`}>
+        <ScreenFrame key={`${nav.tab}-${top.key}`} memoryKey={`${nav.tab}-${top.key}`} animate={top.key > 0}>
           <Screen params={top.params ?? {}} />
-        </div>
+        </ScreenFrame>
       </div>
       <nav className="tabbar">
         {TABS.map(({ id, label, Icon }) => (

@@ -150,6 +150,7 @@ export function GlanceCard({ id }: { id: MetricId }) {
   const m = METRICS[id];
   const t = todayHealth;
   let visual: React.ReactNode = null;
+  let isChart = false;
   if (id === 'steps') visual = <Ring value={t.steps} max={t.stepGoal} size={46} stroke={5} color={m.color} />;
   else if (id === 'sleep') visual = <Ring value={t.sleepScore} max={100} size={46} stroke={5} color={m.color} />;
   else if (id === 'bodyBattery') visual = (
@@ -162,17 +163,18 @@ export function GlanceCard({ id }: { id: MetricId }) {
   else {
     const series = id === 'stress' ? healthHistory.map(d => d.stressAvg) : id === 'hrv' ? healthHistory.map(d => d.hrvOvernight)
       : id === 'hr' ? healthHistory.map(d => d.restingHr) : id === 'calories' ? healthHistory.map(d => d.activeCalories) : healthHistory.map(d => d.floorsClimbed);
-    visual = <div style={{ width: 64 }}><AreaLine values={series.slice(-7)} color={m.color.startsWith('var') ? getComputedColor(id) : m.color} height={36} fill={false} /></div>;
+    isChart = true;
+    visual = <div style={{ width: '100%' }}><AreaLine values={series.slice(-7)} color={m.color.startsWith('var') ? getComputedColor(id) : m.color} height={36} fill={false} /></div>;
   }
   return (
-    <button className="card" style={{ minHeight: 112, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} onClick={() => nav.push('metric', { id })}>
+    <button className="card glance-card" onClick={() => nav.push('metric', { id })}>
       <div className="small" style={{ fontWeight: 600 }}>{m.name}</div>
-      <div className="between" style={{ alignItems: 'flex-end', marginTop: 8 }}>
-        <div>
-          <div className="big-num" style={{ fontSize: 26 }}>{m.value()}{m.unit && <span className="unit">{m.unit}</span>}</div>
-          <div className="tiny">{m.sub()}</div>
+      <div>
+        <div className="glance-body">
+          <div className="big-num glance-value" style={{ fontSize: (m.value() + (m.unit ?? '')).length > 7 ? 22 : 26 }}>{m.value()}{m.unit && <span className="unit">{m.unit}</span>}</div>
+          <div className={`glance-visual${isChart ? ' chart' : ''}`}>{visual}</div>
         </div>
-        {visual}
+        <div className="tiny glance-sub">{m.sub()}</div>
       </div>
     </button>
   );
@@ -187,7 +189,7 @@ function AtAGlance({ glance }: { glance: MetricId[] }) {
   return (
     <>
       <div className="section-title">At a Glance <button className="link" onClick={() => nav.push('allMetrics')}>See All</button></div>
-      <div className="pad grid-2">
+      <div className="pad grid-2 glance-grid">
         {glance.slice(0, 8).map(id => <GlanceCard key={id} id={id} />)}
       </div>
     </>

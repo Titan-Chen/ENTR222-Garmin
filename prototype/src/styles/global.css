@@ -194,3 +194,13 @@ button:focus-visible { outline: 2px solid var(--gc-blue); outline-offset: -2px; 
 .cl-bar { height: 6px; margin-top: 6px; border-radius: 3px; background: #2e2f31; overflow: hidden; }
 .cl-bar > div { height: 100%; border-radius: 3px; }
 .cl-more { margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 2px; font-size: var(--fs-sm); font-weight: 600; color: var(--gc-blue); }
+
+/* At a Glance: every tile the same size, content can't push a tile taller or overlap the chart */
+.glance-grid { grid-auto-rows: 128px; }
+.glance-grid > .card + .card { margin-top: 0; }
+.glance-card { height: 100%; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.glance-body { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; }
+.glance-value { white-space: nowrap; flex-shrink: 0; }
+.glance-visual { flex-shrink: 0; display: flex; align-items: flex-end; }
+.glance-visual.chart { flex: 0 1 64px; min-width: 0; overflow: hidden; }
+.glance-sub { margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

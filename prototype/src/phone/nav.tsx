@@ -28,6 +28,10 @@ const freshStacks = (): Record<TabId, Route[]> => ({
   more: [{ screen: roots.more, key: 0 }],
 });
 
+// Scroll positions per screen (tab + route key). Read and written by the screen frame in PhoneApp.
+export const scrollMemory = new Map<string, number>();
+function forgetScroll(key?: string) { if (key) scrollMemory.delete(key); else scrollMemory.clear(); }
+
 const NavCtx = createContext<NavApi | null>(null);
 
 export function NavProvider({ children }: { children: React.ReactNode }) {
@@ -39,13 +43,18 @@ export function NavProvider({ children }: { children: React.ReactNode }) {
     stack: stacks[tab],
     canPop: stacks[tab].length > 1,
     push: (screen, params) => setStacks(s => ({ ...s, [tab]: [...s[tab], { screen, params, key: keySeq++ }] })),
-    pop: () => setStacks(s => ({ ...s, [tab]: s[tab].length > 1 ? s[tab].slice(0, -1) : s[tab] })),
+    pop: () => setStacks(s => {
+      // Forget the popped screen's scroll spot so opening it again starts at the top.
+      const popped = s[tab][s[tab].length - 1];
+      if (s[tab].length > 1) forgetScroll(`${tab}-${popped.key}`);
+      return { ...s, [tab]: s[tab].length > 1 ? s[tab].slice(0, -1) : s[tab] };
+    }),
     setTab: t => {
       // Tapping the active tab again pops to root (iOS behavior).
       if (t === tab) setStacks(s => ({ ...s, [t]: s[t].slice(0, 1) }));
       setTabState(t);
     },
-    resetAll: () => { setStacks(freshStacks()); setTabState('home'); },
+    resetAll: () => { setStacks(freshStacks()); setTabState('home'); forgetScroll(); },
   };
   return <NavCtx.Provider value={api}>{children}</NavCtx.Provider>;
 }

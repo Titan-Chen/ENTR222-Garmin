@@ -10,7 +10,7 @@ export function AllMetricsScreen() {
   return (
     <div className="screen">
       <NavBar title="At a Glance" />
-      <div className="scroll"><div className="pad grid-2" style={{ paddingTop: 12 }}>
+      <div className="scroll"><div className="pad grid-2 glance-grid" style={{ paddingTop: 12 }}>
         {ALL_METRICS.map(id => <GlanceCard key={id} id={id} />)}
       </div></div>
     </div>
