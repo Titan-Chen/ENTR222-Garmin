@@ -18,7 +18,9 @@ export function CalendarScreen() {
 
   const mine = state.activities.filter(a => a.ownerId === 'me');
   const byDay = (iso: string) => mine.filter(a => isoDate(new Date(a.date)) === iso);
-  const schedOn = (iso: string) => state.scheduled.filter(s => s.date === iso);
+  // Earliest first; items without a time go last.
+  const toMin = (t?: string) => { const m = t?.match(/(\d+):(\d+)\s*(AM|PM)/); return m ? (+m[1] % 12 + (m[3] === 'PM' ? 12 : 0)) * 60 + +m[2] : 1e9; };
+  const schedOn = (iso: string) => state.scheduled.filter(s => s.date === iso).sort((a, b) => toMin(a.time) - toMin(b.time));
   const first = month.getDay();
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = Array.from({ length: first + days }, (_, i) => (i < first ? null : i - first + 1));
@@ -70,7 +72,7 @@ export function CalendarScreen() {
             </button>
           ))}
           {schedOn(selected).map(s => (
-            <div key={s.id} className="list-row"><span style={{ width: 10, height: 10, borderRadius: 5, background: 'var(--m-intensity)' }} /><div className="grow"><div className="title">{s.title}</div><div className="sub">Scheduled workout</div></div></div>
+            <div key={s.id} className="list-row"><span style={{ width: 10, height: 10, borderRadius: 5, background: 'var(--m-intensity)' }} /><div className="grow"><div className="title">{s.title}</div><div className="sub">{s.time || s.note ? [s.time, s.note].filter(Boolean).join(' · ') : 'Scheduled workout'}</div></div></div>
           ))}
           {byDay(selected).length === 0 && schedOn(selected).length === 0 && <div className="list-row small muted">No activities</div>}
         </div></div>

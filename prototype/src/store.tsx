@@ -14,7 +14,7 @@ export interface WatchNotification {
   actions?: string[];
   onAction?: (action: string) => void;
 }
-export interface ScheduledItem { id: string; date: string; title: string; note?: string }
+export interface ScheduledItem { id: string; date: string; title: string; note?: string; time?: string }   // time e.g. "6:00 PM"
 
 export interface State {
   activities: Activity[];

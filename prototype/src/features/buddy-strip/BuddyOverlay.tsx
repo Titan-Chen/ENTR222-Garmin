@@ -26,6 +26,9 @@ const first = (id: string) => personById(id).name.split(' ')[0];
 // Simulated replies: friends who should rest politely decline; everyone else accepts.
 const DECLINE_REPLY = "Need a rest day today, next time!";
 
+// "Today, 6:00 PM" → "6:00 PM"
+const timeOfWhen = (label: string) => label.split(', ').pop();
+
 export function BuddyOverlay() {
   const { state, dispatch } = useStore();
   const b = useBuddies();
@@ -38,7 +41,7 @@ export function BuddyOverlay() {
     if (!inv || inv.status !== 'incoming') return;
     if (action === 'Accept') {
       buddyStore.updateInvite(id, { status: 'accepted' });
-      dispatch({ type: 'schedule', item: { id: `inv-${id}`, date: inv.when.date, title: `${inv.activity} with ${first(inv.personId)}`, note: inv.place } });
+      dispatch({ type: 'schedule', item: { id: `inv-${id}`, date: inv.when.date, title: `${inv.activity} with ${first(inv.personId)}`, note: inv.place, time: timeOfWhen(inv.when.label) } });
       buddyStore.showBanner({ id: `ok-${id}`, title: `You're in: ${inv.activity} with ${first(inv.personId)}`, body: `${inv.when.label} · ${inv.place}. Added to your calendar.` });
     } else {
       buddyStore.updateInvite(id, { status: 'declined' });
@@ -69,7 +72,7 @@ export function BuddyOverlay() {
           dispatch({ type: 'pushWatchNotification', notification: { id: `w-${inv.id}`, app: 'Garmin Connect', from: name, text: `Can't make it: ${inv.activity}, ${inv.when.label}` } });
         } else {
           buddyStore.updateInvite(inv.id, { status: 'accepted', reply: "I'm in!" });
-          dispatch({ type: 'schedule', item: { id: `inv-${inv.id}`, date: inv.when.date, title: `${inv.activity} with ${name}`, note: inv.place } });
+          dispatch({ type: 'schedule', item: { id: `inv-${inv.id}`, date: inv.when.date, title: `${inv.activity} with ${name}`, note: inv.place, time: timeOfWhen(inv.when.label) } });
           buddyStore.showBanner({ id: `r-${inv.id}`, title: `${name} accepted your invite`, body: `${inv.activity} · ${inv.when.label} · ${inv.place}. Added to your calendar.` });
           dispatch({ type: 'pushWatchNotification', notification: { id: `w-${inv.id}`, app: 'Garmin Connect', from: name, text: `Accepted: ${inv.message}` } });
         }
