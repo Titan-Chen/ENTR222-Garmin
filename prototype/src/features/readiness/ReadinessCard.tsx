@@ -7,6 +7,7 @@ import { isOn } from '../../features';
 import { FeelsOffButton, FeelsOffSheet, FlagNote } from '../feels-off/FeelsOffSheet';
 import { useFeedback } from '../feels-off/feedbackStore';
 import { BothReadyPrompt } from '../buddy-strip/BothReadyPrompt';
+import { ReadinessBuddies } from '../buddy-strip/ReadinessBuddies';
 
 // NEW FEATURE (flag: dailyReadiness, slot: home.top)
 // One card at the top of Home with a plain answer for today (Go hard / Go light / Recover)
@@ -45,7 +46,8 @@ export function ReadinessCard() {
           </div>
           <div className="small" style={{ marginTop: 10 }}>{r.reason}.</div>
           <div className="small muted" style={{ marginTop: 4 }}>{LEVEL_SUGGESTION[r.level]}</div>
-          {isOn('bothReady') && <BothReadyPrompt level={r.level} />}
+          {/* Workout buddies live inside this card so working out together is the first thing you see. */}
+          {isOn('workoutBuddies') ? <ReadinessBuddies level={r.level} /> : isOn('bothReady') && <BothReadyPrompt level={r.level} />}
           {showFeelsOff && flagged && <FlagNote text={`You said: ${flagged.felt}${flagged.reasons.length ? ` · ${flagged.reasons.join(', ')}` : ''}`} />}
 
           <button onClick={() => setOpen(o => !o)} className="row" aria-expanded={open}

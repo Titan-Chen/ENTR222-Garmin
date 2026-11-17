@@ -8,14 +8,17 @@ import { buddyStatuses } from './buddies';
 import { friendLevel } from './bothReady';
 import { buddyStore, useBuddies, type Invite } from './buddyStore';
 import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { isOn } from '../../features';
 
 // NEW FEATURE (flag: workoutBuddies, slot: home.afterGlance)
 // "Workout Buddies" card on Home: your chosen buddies (3–5) and their Go hard / Go light / Recover
 // status, your sharing status, and your workout invites. Tap a buddy to invite or cheer.
+// When Daily Readiness is on, buddies are shown inside that card instead (ReadinessBuddies), so this hides.
 export function BuddyStrip() {
   const { state } = useStore();
   const nav = useNav();
   const b = useBuddies();
+  if (isOn('dailyReadiness')) return null;
   const buddies = b.buddies.filter(id => state.connections.includes(id) && buddyStatuses.some(s => s.personId === id));
   const me = computeReadiness(todayHealth, state.activities);
 
