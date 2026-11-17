@@ -25,6 +25,7 @@ export const FEATURES = {
   workoutBuddies: true,   // ON: Workout Buddies card + picker, sharing toggle, invites (phone + watch) (src/features/buddy-strip)
   bothReady: true,        // ON: "Both ready" prompt on Daily Readiness + one-time phone/watch alert
   watchAlerts: false,
+  challengeLeaderboard: true, // ON: bigger active-challenge cards on the Challenges tab showing every friend's progress (src/features/challenge-leaderboard)
 };
 
 export type FeatureName = keyof typeof FEATURES;

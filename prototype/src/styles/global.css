@@ -179,3 +179,18 @@ input, textarea { font: inherit; }
 button:focus { outline: none; }
 button:focus-visible { outline: 2px solid var(--gc-blue); outline-offset: -2px; }
 .tab:focus-visible, .watch-btn:focus-visible { outline: none; }
+
+/* Challenge leaderboard card (feature: challengeLeaderboard) */
+.cl-card { padding: 16px; }
+.cl-title { font-size: var(--fs-xl); font-weight: 700; }
+.cl-standing { margin-top: 12px; padding: 8px 10px; border-radius: 8px; background: var(--gc-surface-2); font-size: var(--fs-sm); font-weight: 600; }
+.cl-rows { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+.cl-row { display: flex; align-items: center; gap: 10px; }
+.cl-rank { width: 16px; text-align: center; font-size: var(--fs-md); font-weight: 600; color: var(--gc-text-2); }
+.cl-rank.first { color: #f5a623; }
+.cl-name { font-size: var(--fs-md); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-row.me .cl-name { color: var(--gc-blue); }
+.cl-value { font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
+.cl-bar { height: 6px; margin-top: 6px; border-radius: 3px; background: #2e2f31; overflow: hidden; }
+.cl-bar > div { height: 100%; border-radius: 3px; }
+.cl-more { margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 2px; font-size: var(--fs-sm); font-weight: 600; color: var(--gc-blue); }

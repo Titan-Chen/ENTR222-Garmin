@@ -7,6 +7,7 @@ import { personById } from '../../data/people';
 import { badges, levelInfo } from '../../data/social';
 import { daysAgo, shortDate } from '../../data/dates';
 import type { Challenge } from '../../data/types';
+import { slotEntries } from '../../slots';
 
 const badgeIcon: Record<string, React.ComponentType<any>> = { footprints: Footprints, flame: Flame, sunrise: Sunrise, moon: Moon, dumbbell: Dumbbell };
 
@@ -16,6 +17,7 @@ export function ChallengesScreen() {
   const [seg, setSeg] = useState(0);
   const active = state.challenges.filter(c => c.status === 'active');
   const available = state.challenges.filter(c => c.status === 'available');
+  const Card = slotEntries('challenges.card')[0]?.component ?? ChallengeCard;
   return (
     <div className="screen">
       <NavBar title="Challenges" back={false} right={<button onClick={() => nav.push('createChallenge')} aria-label="Create challenge"><Plus size={24} /></button>} />
@@ -24,7 +26,7 @@ export function ChallengesScreen() {
         {seg === 0 ? (
           <>
             <div className="list-header">Active</div>
-            <div className="pad">{active.map(c => <ChallengeCard key={c.id} c={c} onClick={() => nav.push('challenge', { id: c.id })} />)}</div>
+            <div className="pad">{active.map(c => <Card key={c.id} c={c} onClick={() => nav.push('challenge', { id: c.id })} />)}</div>
             <div className="list-header">Available</div>
             <div className="pad">
               {available.map(c => (
