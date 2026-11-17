@@ -204,3 +204,23 @@ button:focus-visible { outline: 2px solid var(--gc-blue); outline-offset: -2px; 
 .glance-visual { flex-shrink: 0; display: flex; align-items: flex-end; }
 .glance-visual.chart { flex: 0 1 64px; min-width: 0; overflow: hidden; }
 .glance-sub { margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* User test panel (moderator only), opened from "User test" above the devices */
+.stage-bar .controls button.on { background: #1d1f22; color: #fff; border-color: #1d1f22; }
+.testplan { position: fixed; left: 16px; top: 70px; width: 290px; max-height: calc(100vh - 86px); overflow-y: auto; z-index: 50;
+  background: #fff; color: #1d1f22; border: 1px solid #d8dde3; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 12px 14px; font-size: 13px; line-height: 1.45; }
+.testplan button { font: inherit; cursor: pointer; }
+.tp-head { display: flex; justify-content: space-between; align-items: center; color: #5b6168; }
+.tp-head b { color: #1d1f22; }
+.tp-head button { color: #0b6f9c; font-weight: 600; background: none; border: 0; }
+.tp-scenario { margin-top: 8px; padding: 6px 8px; border-radius: 8px; background: #eef6fb; color: #0b6f9c; font-size: 12px; font-weight: 600; }
+.tp-title { margin-top: 12px; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #5b6168; }
+.tp-prompt { margin-top: 4px; font-size: 15px; font-weight: 600; line-height: 1.4; }
+.tp-note { margin-top: 8px; color: #4a5057; }
+.tp-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.tp-actions button { background: #11a9ed; color: #fff; border: 0; border-radius: 8px; padding: 7px 12px; font-weight: 600; }
+.tp-nav { display: flex; gap: 6px; align-items: center; margin-top: 14px; padding-top: 10px; border-top: 1px solid #e6e9ed; }
+.tp-nav button { background: #f4f6f8; border: 1px solid #d8dde3; border-radius: 8px; padding: 5px 10px; }
+.tp-nav button:disabled { opacity: .4; cursor: default; }
+.tp-nav select { flex: 1; min-width: 0; padding: 5px; border-radius: 8px; border: 1px solid #d8dde3; background: #fff; font: inherit; }
+.stage.with-plan .stage-main { padding-left: 310px; }

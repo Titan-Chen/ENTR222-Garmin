@@ -4,6 +4,7 @@ import { PhoneApp } from './phone/PhoneApp';
 import { WatchApp } from './watch/WatchApp';
 import { FEATURES } from './features';
 import { Slot, runResetHooks } from './slots';
+import { TestPlanPanel } from './testplan/TestPlanPanel';
 
 export default function App() {
   return (
@@ -17,19 +18,22 @@ function Stage() {
   const { dispatch } = useStore();
   const [scale, setScale] = useState(1);
   const [resetKey, setResetKey] = useState(0);
+  const [showPlan, setShowPlan] = useState(false);
+  const resetDemo = () => { runResetHooks(); dispatch({ type: 'reset' }); setResetKey(k => k + 1); };
 
   // Scale both devices to fit laptop / projector screens.
   useEffect(() => {
-    const fit = () => setScale(Math.min(1, (window.innerHeight - 70) / 880, (window.innerWidth - 40) / 1000));
+    // Leave room on the left for the user-test panel when it's open.
+    const fit = () => setScale(Math.min(1, (window.innerHeight - 70) / 880, (window.innerWidth - 40 - (showPlan ? 310 : 0)) / 1000));
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
-  }, []);
+  }, [showPlan]);
 
   const on = Object.entries(FEATURES).filter(([, v]) => v).map(([k]) => k);
 
   return (
-    <div className="stage">
+    <div className={`stage${showPlan ? ' with-plan' : ''}`}>
       <div className="stage-bar">
         <div>
           <strong>Garmin Connect prototype</strong>
@@ -42,9 +46,11 @@ function Stage() {
           <button title="A plain text message mirrored from the phone. It has no Accept button; use “Ethan invites you to work out” for an invite." onClick={() => dispatch({ type: 'pushWatchNotification', notification: { id: String(Date.now()), from: 'Ethan Larimore', app: 'Messages', text: 'yo you lifting today?' } })}>
             Ethan texts you (watch only)
           </button>
-          <button onClick={() => { runResetHooks(); dispatch({ type: 'reset' }); setResetKey(k => k + 1); }}>Reset demo</button>
+          {FEATURES.workoutBuddies && <button className={showPlan ? 'on' : ''} onClick={() => setShowPlan(v => !v)}>User test</button>}
+          <button onClick={resetDemo}>Reset demo</button>
         </div>
       </div>
+      {showPlan && <TestPlanPanel onClose={() => setShowPlan(false)} onReset={resetDemo} />}
       <div className="stage-main">
         <div className="stage-scale" style={{ transform: `scale(${scale})` }} key={resetKey}>
           <div className="device-col">

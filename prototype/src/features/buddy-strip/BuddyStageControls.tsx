@@ -6,10 +6,11 @@ import { fireBothReadyRef } from './BuddyOverlay';
 
 // Demo buttons in the bar above the devices (slot: stage.controls). These simulate things that
 // would come from a friend's phone in real life, so testers can try receiving an invite on the watch.
-export function BuddyStageControls() {
-  const { dispatch } = useStore();
+type Dispatch = ReturnType<typeof useStore>['dispatch'];
 
-  const incomingInvite = () => {
+// "Ethan invites you to work out": Pickup basketball today at 7:30 at Tudor Fieldhouse, on the watch and phone.
+export function sendIncomingInvite(dispatch: Dispatch) {
+  {
     const when = WHEN_OPTIONS[1];
     const activity = 'Pickup basketball';
     const id = `in${Date.now()}`;
@@ -25,7 +26,12 @@ export function BuddyStageControls() {
       id: `b${id}`, title: 'Ethan invited you to work out', body: `${activity} · ${when.label} · ${PLACES[2]}`,
       actions: [{ label: 'Accept', run: () => respondToInvite(id, 'Accept') }, { label: 'Decline', run: () => respondToInvite(id, 'Decline') }],
     });
-  };
+  }
+}
+
+export function BuddyStageControls() {
+  const { dispatch } = useStore();
+  const incomingInvite = () => sendIncomingInvite(dispatch);
 
   return (
     <>

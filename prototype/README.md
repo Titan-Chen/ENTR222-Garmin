@@ -17,6 +17,8 @@ Everything else (including Garmin's own Training Readiness and the rest of Home)
 
 **Demo buttons above the devices:** "Ethan invites you to work out" sends an invite to your watch and phone (Accept / Decline on either; on the watch use UP/DOWN and START). "Ethan texts you (watch only)" is a plain text message mirrored to the watch, like the real app: it has no Accept button and doesn't appear in Garmin Connect. "Show 'Both ready' alert" fires the alert again. "Reset demo" clears everything, including invites and feedback.
 
+**Running a user test session:** click **User test** above the devices. A moderator panel opens on the left with the steps from the team's *Workout Buddy User Test Plan*: setup, then the 12 prompts to read aloud, with what to record for each. **Prepare session** resets the demo, starts on Home and skips the automatic "Both ready" alert. Some steps have one-click helpers (**Go to Home**, **Open sample invite to Peter**, **Open Calendar**, **Send Ethan's invite**). Use **Back / Next** or the step menu to move through it (it remembers your step), and **Hide** while the participant looks at the screen. The scenario is: easy lift today at 6 p.m. at the Rice Rec Center (Peter is the Go light match).
+
 **Core flow for testing:** Home → Daily Readiness says *Go light* → Work out together has Peter picked ("Peter is Go light too") → **Invite Peter** (or tap Ethan or Galen to invite them instead) → pick time/place → **Send invite** → Peter accepts → it's on your Calendar and your watch. Add `?features=none` to the URL to hide all new features and see the plain baseline.
 
 ## About the starting point

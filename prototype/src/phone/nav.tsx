@@ -13,6 +13,7 @@ interface NavApi {
   pop: () => void;
   setTab: (t: TabId) => void;
   resetAll: () => void;
+  goRoot: (t: TabId) => void;   // switch to a tab and go back to its first screen
 }
 
 const roots: Record<TabId, string> = {
@@ -31,6 +32,9 @@ const freshStacks = (): Record<TabId, Route[]> => ({
 // Scroll positions per screen (tab + route key). Read and written by the screen frame in PhoneApp.
 export const scrollMemory = new Map<string, number>();
 function forgetScroll(key?: string) { if (key) scrollMemory.delete(key); else scrollMemory.clear(); }
+
+// Lets controls outside the phone (the user-test panel above the devices) move the phone to a screen.
+export const navControl: { current: NavApi | null } = { current: null };
 
 const NavCtx = createContext<NavApi | null>(null);
 
@@ -55,7 +59,9 @@ export function NavProvider({ children }: { children: React.ReactNode }) {
       setTabState(t);
     },
     resetAll: () => { setStacks(freshStacks()); setTabState('home'); forgetScroll(); },
+    goRoot: t => { setStacks(s => ({ ...s, [t]: s[t].slice(0, 1) })); setTabState(t); },
   };
+  navControl.current = api;
   return <NavCtx.Provider value={api}>{children}</NavCtx.Provider>;
 }
 
