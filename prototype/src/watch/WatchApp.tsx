@@ -176,7 +176,7 @@ export function WatchApp() {
           <span className="row" style={{ gap: 4 }}><Zap size={16} color="#1fa0ff" />{t.bodyBatteryLow}</span>
         </div>
         <div className="row" style={{ gap: 4, marginTop: 8, fontSize: 15 }}><Heart size={16} color="#e5304c" />68</div>
-        <svg style={{ position: 'absolute', inset: 6 }} viewBox="0 0 100 100">
+        <svg style={{ position: 'absolute', top: 6, left: 6, width: 'calc(100% - 12px)', height: 'calc(100% - 12px)' }} viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="48" fill="none" stroke="#1d1e20" strokeWidth="2.4" />
           <circle cx="50" cy="50" r="48" fill="none" stroke="#11a9ed" strokeWidth="2.4" strokeDasharray={`${(t.steps / t.stepGoal) * 301} 301`} transform="rotate(-90 50 50)" strokeLinecap="round" />
         </svg>
