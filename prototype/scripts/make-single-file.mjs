@@ -10,7 +10,7 @@ const dist = join(root, 'dist');
 let html = readFileSync(join(dist, 'index.html'), 'utf8');
 
 html = html.replace(/<link rel="stylesheet"[^>]*href="\.\/(assets\/[^"]+\.css)"[^>]*>/g, (_, p) =>
-  `<style>\n${readFileSync(join(dist, p), 'utf8')}\n</style>`);
+  `<style>\n${readFileSync(join(dist, p), 'utf8')}\n</style>`); // function replacer: CSS inserted literally
 
 const scripts = [];
 html = html.replace(/<script type="module"[^>]*src="\.\/(assets\/[^"]+\.js)"[^>]*><\/script>/g, (_, p) => {
@@ -18,7 +18,9 @@ html = html.replace(/<script type="module"[^>]*src="\.\/(assets\/[^"]+\.js)"[^>]
   return '';
 });
 // Run the app after the #root element exists.
-html = html.replace('</body>', scripts.map(s => `<script type="module">\n${s}\n</script>`).join('\n') + '\n</body>');
+// Use a function replacer so "$&", "$'" etc. inside the JS are inserted literally.
+const inlined = scripts.map(s => `<script type="module">\n${s}\n</script>`).join('\n') + '\n</body>';
+html = html.replace('</body>', () => inlined);
 
 writeFileSync(join(root, 'Open Prototype.html'), html);
 console.log(`Wrote Open Prototype.html (${Math.round(html.length / 1024)} KB)`);

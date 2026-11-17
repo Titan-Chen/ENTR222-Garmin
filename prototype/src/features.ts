@@ -18,7 +18,7 @@
  */
 export const FEATURES = {
   dailyReadiness: true,   // ON: Daily Readiness card at the top of Home (src/features/readiness)
-  feelsOff: false,
+  feelsOff: true,         // ON: confidence + "Doesn't feel right?" on Stress and Daily Readiness (src/features/feels-off)
   weeklyHealth: false,
   strengthAware: false,
   workoutBuddies: true,   // ON: compact "Friends Today" row on Home, below At a Glance (src/features/buddy-strip)

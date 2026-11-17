@@ -26,6 +26,8 @@ export interface Factor {
 
 export interface Readiness {
   level: ReadinessLevel;
+  confidence: 'High' | 'Moderate' | 'Low';
+  confidenceNote: string;
   score: number;        // 0–100 (kept internal; the card shows the plain answer)
   reason: string;       // one line, e.g. "Slept 7h 38m, HRV balanced, lifted yesterday"
   factors: Factor[];
@@ -82,5 +84,13 @@ export function computeReadiness(day: DayHealth, activities: Activity[]): Readin
     `HRV ${day.hrvStatus.toLowerCase()}`,
     load.phrase,
   ].filter(Boolean);
-  return { level, score, reason: parts.join(', '), factors };
+  // Confidence: how far the score is from the nearest cut-off (50 = Recover/Go light, 78 = Go light/Go hard).
+  const forced = day.sleepScore < 50 || day.bodyBatteryHigh < 35;
+  const dist = forced ? 99 : Math.min(Math.abs(score - 50), Math.abs(score - 78));
+  const confidence: Readiness['confidence'] = dist >= 8 ? 'High' : dist >= 3 ? 'Moderate' : 'Low';
+  const neighbour = level === 'light' ? (Math.abs(score - 78) < Math.abs(score - 50) ? 'Go hard' : 'Recover') : 'Go light';
+  const confidenceNote = confidence === 'High'
+    ? 'Your data points clearly to this answer.'
+    : `Your readiness score (${score}) is close to the line for ${neighbour}, so this could go either way. Trust how you feel.`;
+  return { level, confidence, confidenceNote, score, reason: parts.join(', '), factors };
 }

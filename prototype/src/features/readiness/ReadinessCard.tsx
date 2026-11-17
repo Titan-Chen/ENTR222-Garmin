@@ -3,6 +3,9 @@ import { ChevronDown, ChevronUp, Flame, Footprints, BedDouble } from 'lucide-rea
 import { useStore } from '../../store';
 import { todayHealth } from '../../data/health';
 import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL, LEVEL_SUGGESTION, type ReadinessLevel } from './readiness';
+import { isOn } from '../../features';
+import { FeelsOffButton, FeelsOffSheet, FlagNote } from '../feels-off/FeelsOffSheet';
+import { useFeedback } from '../feels-off/feedbackStore';
 
 // NEW FEATURE (flag: dailyReadiness, slot: home.top)
 // One card at the top of Home with a plain answer for today (Go hard / Go light / Recover)
@@ -13,7 +16,12 @@ const ICON: Record<ReadinessLevel, React.ComponentType<any>> = { hard: Flame, li
 export function ReadinessCard() {
   const { state } = useStore();
   const [open, setOpen] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const fb = useFeedback();
+  const showFeelsOff = isOn('feelsOff');   // confidence + "Doesn't feel right?" (feelsOff flag)
   const r = computeReadiness(todayHealth, state.activities);
+  const flagged = fb.get('readiness');
+  const confColor = r.confidence === 'High' ? 'var(--gc-green)' : r.confidence === 'Moderate' ? '#f5b83d' : '#ff8a3d';
   const color = LEVEL_COLOR[r.level];
   const Icon = ICON[r.level];
 
@@ -27,12 +35,16 @@ export function ReadinessCard() {
               <Icon size={24} color={color} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="tiny">Today's suggestion</div>
+              <div className="between">
+                <span className="tiny">Today's suggestion</span>
+                {showFeelsOff && <span className="chip" style={{ color: confColor, background: 'rgba(255,255,255,.06)' }}>{r.confidence} confidence</span>}
+              </div>
               <div style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1.15 }}>{LEVEL_LABEL[r.level]}</div>
             </div>
           </div>
           <div className="small" style={{ marginTop: 10 }}>{r.reason}.</div>
           <div className="small muted" style={{ marginTop: 4 }}>{LEVEL_SUGGESTION[r.level]}</div>
+          {showFeelsOff && flagged && <FlagNote text={`You said: ${flagged.felt}${flagged.reasons.length ? ` · ${flagged.reasons.join(', ')}` : ''}`} />}
 
           <button onClick={() => setOpen(o => !o)} className="row" aria-expanded={open}
             style={{ marginTop: 12, width: '100%', justifyContent: 'center', gap: 4, color: 'var(--gc-blue)', fontSize: 13, fontWeight: 600, paddingTop: 10, borderTop: '1px solid var(--gc-separator)' }}>
@@ -41,6 +53,11 @@ export function ReadinessCard() {
 
           {open && (
             <div style={{ marginTop: 6 }}>
+              {showFeelsOff && (
+                <div className="tiny" style={{ padding: '6px 0 8px', lineHeight: 1.45, borderBottom: '1px solid var(--gc-separator)' }}>
+                  <b style={{ color: confColor }}>{r.confidence} confidence.</b> {r.confidenceNote}
+                </div>
+              )}
               {r.factors.map(f => (
                 <div key={f.name} className="between" style={{ padding: '8px 0', borderBottom: '1px solid var(--gc-separator)' }}>
                   <div>
@@ -55,8 +72,24 @@ export function ReadinessCard() {
               </div>
             </div>
           )}
+
+          {showFeelsOff && <FeelsOffButton flagged={!!flagged} onClick={() => setSheet(true)} />}
         </div>
       </div>
+      {sheet && (
+        <FeelsOffSheet
+          target="readiness"
+          title="How do you actually feel today?"
+          measured={`Garmin suggested ${LEVEL_LABEL[r.level]} (${r.confidence.toLowerCase()} confidence)`}
+          options={[
+            { label: 'Ready to go hard', color: LEVEL_COLOR.hard },
+            { label: 'Okay, but want to take it light', color: LEVEL_COLOR.light },
+            { label: 'I need to recover', color: LEVEL_COLOR.recover },
+          ]}
+          reasons={['Sore muscles', 'Slept badly', 'Stressed', 'Feeling sick', 'Feel great', 'Busy day']}
+          onClose={() => setSheet(false)}
+        />
+      )}
     </>
   );
 }

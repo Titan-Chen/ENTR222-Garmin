@@ -2,6 +2,7 @@ import React from 'react';
 import { isOn, type FeatureName } from './features';
 import { BuddyStrip } from './features/buddy-strip/BuddyStrip';
 import { ReadinessCard } from './features/readiness/ReadinessCard';
+import { StressConfidence } from './features/feels-off/StressConfidence';
 
 /**
  * SLOTS: named places in the baseline UI where new features plug in
@@ -32,7 +33,7 @@ export const registry: Record<SlotName, SlotEntry[]> = {
   'home.afterGlance': [{ feature: 'workoutBuddies', component: BuddyStrip }],
   'social.top': [],
   'connections.top': [],
-  'metric.stress': [],
+  'metric.stress': [{ feature: 'feelsOff', component: StressConfidence }],
   'activity.summary': [],
   'watch.glances': [],
   'watch.notifications': [],
