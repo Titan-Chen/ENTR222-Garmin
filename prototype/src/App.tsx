@@ -37,10 +37,11 @@ function Stage() {
           {on.length > 0 && <span style={{ marginLeft: 10, color: '#0b6f9c' }}>Features on: {on.join(', ')}</span>}
         </div>
         <div className="controls">
-          <button onClick={() => dispatch({ type: 'pushWatchNotification', notification: { id: String(Date.now()), from: 'Ethan Larimore', app: 'Messages', text: 'yo you lifting today?' } })}>
-            Send a phone notification to the watch
-          </button>
           <Slot name="stage.controls" />
+          {/* A plain text message mirrored to the watch (read-only, like the real app). Workout invites with Accept / Decline come from "Ethan invites you to work out". */}
+          <button title="A plain text message mirrored from the phone. It has no Accept button; use “Ethan invites you to work out” for an invite." onClick={() => dispatch({ type: 'pushWatchNotification', notification: { id: String(Date.now()), from: 'Ethan Larimore', app: 'Messages', text: 'yo you lifting today?' } })}>
+            Ethan texts you (watch only)
+          </button>
           <button onClick={() => { runResetHooks(); dispatch({ type: 'reset' }); setResetKey(k => k + 1); }}>Reset demo</button>
         </div>
       </div>

@@ -15,7 +15,7 @@
 
 Everything else (including Garmin's own Training Readiness and the rest of Home) still matches the current Garmin Connect app.
 
-**Demo buttons above the devices:** "Ethan invites you to work out" sends an invite to your watch and phone (Accept / Decline on either; on the watch use UP/DOWN and START). "Show 'Both ready' alert" fires the alert again. "Reset demo" clears everything, including invites and feedback.
+**Demo buttons above the devices:** "Ethan invites you to work out" sends an invite to your watch and phone (Accept / Decline on either; on the watch use UP/DOWN and START). "Ethan texts you (watch only)" is a plain text message mirrored to the watch, like the real app: it has no Accept button and doesn't appear in Garmin Connect. "Show 'Both ready' alert" fires the alert again. "Reset demo" clears everything, including invites and feedback.
 
 **Core flow for testing:** Home → Daily Readiness says *Go light* → Work out together has Peter picked ("Peter is Go light too") → **Invite Peter** (or tap Ethan or Galen to invite them instead) → pick time/place → **Send invite** → Peter accepts → it's on your Calendar and your watch. Add `?features=none` to the URL to hide all new features and see the plain baseline.
 
@@ -65,7 +65,7 @@ It's laid out for a laptop or projector (about 1440×900) and scales down to fit
 
 Flow: watch face → START → pick Run/Bike/Strength/Basketball/Walk → GPS → START records → START stops → Save. **The saved activity syncs to the phone** (blue sync banner, then it appears in Today's Activity, the News Feed and the Calendar).
 
-The **"Send a phone notification to the watch"** button at the top shows a message on the watch. **Reset demo** clears everything.
+The **"Ethan texts you (watch only)"** button at the top shows a plain text message on the watch. **"Ethan invites you to work out"** sends a workout invite you can accept on the watch or phone. **Reset demo** clears everything.
 
 ## User-test tasks (from our User Test Plan)
 
