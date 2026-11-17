@@ -39,7 +39,7 @@ export function WorkoutBuddiesScreen() {
           </div>
         </div></div>
 
-        <div className="list-header">My buddies · {b.buddies.length} of {MAX_BUDDIES}</div>
+        <div className="list-header">My buddies · {b.buddies.length} picked (up to {MAX_BUDDIES})</div>
         <div className="pad"><div className="list">
           {candidates.map(id => {
             const p = personById(id);
@@ -60,7 +60,7 @@ export function WorkoutBuddiesScreen() {
           })}
         </div></div>
         <div className="pad tiny" style={{ marginTop: 10, lineHeight: 1.5 }}>
-          Buddies appear on your Home screen. You'll get a “Both ready” alert when a buddy's readiness matches yours, so it's easy to plan a workout together.
+          Tick the connections you want as workout buddies. They appear in Daily Readiness on your Home screen. You'll get a “Both ready” alert when a buddy's readiness matches yours, so it's easy to plan a workout together.
         </div>
       </div>
     </div>
