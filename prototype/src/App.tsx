@@ -3,6 +3,7 @@ import { StoreProvider, useStore } from './store';
 import { PhoneApp } from './phone/PhoneApp';
 import { WatchApp } from './watch/WatchApp';
 import { FEATURES } from './features';
+import { Slot, runResetHooks } from './slots';
 
 export default function App() {
   return (
@@ -31,7 +32,7 @@ function Stage() {
     <div className="stage">
       <div className="stage-bar">
         <div>
-          <strong>Garmin Connect: baseline prototype</strong>
+          <strong>Garmin Connect prototype</strong>
           <span style={{ marginLeft: 10 }}>ENTR222 class project · not affiliated with Garmin · all data is made up</span>
           {on.length > 0 && <span style={{ marginLeft: 10, color: '#0b6f9c' }}>Features on: {on.join(', ')}</span>}
         </div>
@@ -39,7 +40,8 @@ function Stage() {
           <button onClick={() => dispatch({ type: 'pushWatchNotification', notification: { id: String(Date.now()), from: 'Ethan Larimore', app: 'Messages', text: 'yo you lifting today?' } })}>
             Send a phone notification to the watch
           </button>
-          <button onClick={() => { dispatch({ type: 'reset' }); setResetKey(k => k + 1); }}>Reset demo</button>
+          <Slot name="stage.controls" />
+          <button onClick={() => { runResetHooks(); dispatch({ type: 'reset' }); setResetKey(k => k + 1); }}>Reset demo</button>
         </div>
       </div>
       <div className="stage-main">

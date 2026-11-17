@@ -6,6 +6,7 @@ import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL, LEVEL_SUGGESTION, type Read
 import { isOn } from '../../features';
 import { FeelsOffButton, FeelsOffSheet, FlagNote } from '../feels-off/FeelsOffSheet';
 import { useFeedback } from '../feels-off/feedbackStore';
+import { BothReadyPrompt } from '../buddy-strip/BothReadyPrompt';
 
 // NEW FEATURE (flag: dailyReadiness, slot: home.top)
 // One card at the top of Home with a plain answer for today (Go hard / Go light / Recover)
@@ -44,6 +45,7 @@ export function ReadinessCard() {
           </div>
           <div className="small" style={{ marginTop: 10 }}>{r.reason}.</div>
           <div className="small muted" style={{ marginTop: 4 }}>{LEVEL_SUGGESTION[r.level]}</div>
+          {isOn('bothReady') && <BothReadyPrompt level={r.level} />}
           {showFeelsOff && flagged && <FlagNote text={`You said: ${flagged.felt}${flagged.reasons.length ? ` · ${flagged.reasons.join(', ')}` : ''}`} />}
 
           <button onClick={() => setOpen(o => !o)} className="row" aria-expanded={open}

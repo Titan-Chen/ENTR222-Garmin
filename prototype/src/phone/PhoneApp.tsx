@@ -13,6 +13,7 @@ import {
   MoreScreen, PlaceholderScreen, ConnectionsScreen, AddConnectionScreen, FriendProfileScreen,
   GroupsScreen, GroupScreen, DevicesScreen, TrainingScreen, WorkoutsScreen,
 } from './screens/MoreScreens';
+import { Slot, featureScreens } from '../slots';
 
 // Screen registry: route name → component. New feature screens get registered here too.
 const SCREENS: Record<string, React.ComponentType<{ params: any }>> = {
@@ -60,7 +61,7 @@ function AppBody() {
   const nav = useNav();
   const { state } = useStore();
   const top = nav.stack[nav.stack.length - 1];
-  const Screen = SCREENS[top.screen] ?? PlaceholderScreen;
+  const Screen = SCREENS[top.screen] ?? featureScreens[top.screen] ?? PlaceholderScreen;
   return (
     <>
       {state.sync.status === 'syncing' && (
@@ -83,6 +84,7 @@ function AppBody() {
         ))}
       </nav>
       {state.toast && <div className="toast">{state.toast}</div>}
+      <Slot name="phone.overlay" />
     </>
   );
 }

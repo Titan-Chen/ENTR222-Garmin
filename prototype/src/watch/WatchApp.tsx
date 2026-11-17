@@ -50,6 +50,8 @@ export function WatchApp() {
 
   const glances = [...baseGlances(), ...slotEntries('watch.glances').map(e => ({ id: e.feature, title: e.feature, value: '', sub: '', Icon: Bell, color: '#fff' }))];
   const notif = state.watchNotifications[0];
+  const [actSel, setActSel] = useState(0);
+  useEffect(() => { setActSel(0); }, [notif?.id]);
 
   useEffect(() => { const iv = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(iv); }, []);
   useEffect(() => {
@@ -88,7 +90,14 @@ export function WatchApp() {
 
   const press = useCallback((b: Btn) => {
     if (b === 'light') { setLight(true); window.setTimeout(() => setLight(false), 1500); return; }
-    if (notif) { // any button dismisses a notification
+    if (notif) {
+      if (notif.actions?.length) {
+        // Actionable notification: UP/DOWN choose, START confirms, BACK dismisses.
+        if (b === 'up') { setActSel(i => (i - 1 + notif.actions!.length) % notif.actions!.length); return; }
+        if (b === 'down') { setActSel(i => (i + 1) % notif.actions!.length); return; }
+        if (b === 'start') notif.onAction?.(notif.actions[actSel]);
+      }
+      // any other button dismisses the notification
       dispatch({ type: 'dismissWatchNotification', id: notif.id });
       return;
     }
@@ -137,7 +146,7 @@ export function WatchApp() {
         break;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, sel, glances.length, notif, elapsed]);
+  }, [mode, sel, glances.length, notif, elapsed, actSel]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -280,7 +289,20 @@ export function WatchApp() {
           <div className="w-sub" style={{ marginTop: 6 }}>{notif.app.toUpperCase()}</div>
           <div className="w-title" style={{ fontSize: 18, marginTop: 2 }}>{notif.from}</div>
           <div style={{ fontSize: 15, marginTop: 6, lineHeight: 1.3 }}>{notif.text}</div>
-          <div className="w-sub" style={{ fontSize: 11, marginTop: 10 }}>Press any button to dismiss</div>
+          {notif.actions?.length ? (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10, width: '100%' }}>
+                {notif.actions.map((a, i) => (
+                  <button key={a} onClick={() => { notif.onAction?.(a); dispatch({ type: 'dismissWatchNotification', id: notif.id }); }}
+                    style={{ padding: '6px 0', borderRadius: 18, fontSize: 14, fontWeight: 600, textAlign: 'center', color: '#fff',
+                      background: i === actSel ? (i === 0 ? '#30c77b' : '#3a3c40') : '#1a1b1d', border: i === actSel ? '2px solid #fff' : '2px solid transparent' }}>{a}</button>
+                ))}
+              </div>
+              <div className="w-sub" style={{ fontSize: 10, marginTop: 6 }}>UP/DOWN to choose · START to select</div>
+            </>
+          ) : (
+            <div className="w-sub" style={{ fontSize: 11, marginTop: 10 }}>Press any button to dismiss</div>
+          )}
         </div>
       )}
       {light && <div className="w-light" />}

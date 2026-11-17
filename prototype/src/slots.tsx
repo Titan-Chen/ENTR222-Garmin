@@ -3,6 +3,11 @@ import { isOn, type FeatureName } from './features';
 import { BuddyStrip } from './features/buddy-strip/BuddyStrip';
 import { ReadinessCard } from './features/readiness/ReadinessCard';
 import { StressConfidence } from './features/feels-off/StressConfidence';
+import { BuddyOverlay } from './features/buddy-strip/BuddyOverlay';
+import { BuddyStageControls } from './features/buddy-strip/BuddyStageControls';
+import { WorkoutBuddiesScreen } from './features/buddy-strip/WorkoutBuddiesScreen';
+import { buddyStore } from './features/buddy-strip/buddyStore';
+import { feedbackStore } from './features/feels-off/feedbackStore';
 
 /**
  * SLOTS: named places in the baseline UI where new features plug in
@@ -16,6 +21,10 @@ import { StressConfidence } from './features/feels-off/StressConfidence';
  *   activity.summary   under an activity summary (e.g. strength-aware summary)
  *   watch.glances      extra glances appended to the watch glance loop
  *   watch.notifications custom watch alerts (e.g. "Lift with me at 6?" accept/decline)
+ *   phone.overlay      always-mounted layer over the whole phone (banners, sheets, background timers)
+ *   stage.controls     extra demo buttons in the bar above the devices
+ *
+ * Features can also add full phone screens (featureScreens) and clean up on "Reset demo" (resetHooks).
  *
  * To add a feature:
  *   1. Add a flag in src/features.ts
@@ -24,7 +33,8 @@ import { StressConfidence } from './features/feels-off/StressConfidence';
  */
 export type SlotName =
   | 'home.top' | 'home.afterGlance' | 'social.top' | 'connections.top'
-  | 'metric.stress' | 'activity.summary' | 'watch.glances' | 'watch.notifications';
+  | 'metric.stress' | 'activity.summary' | 'watch.glances' | 'watch.notifications'
+  | 'phone.overlay' | 'stage.controls';
 
 export interface SlotEntry { feature: FeatureName; component: React.ComponentType<any> }
 
@@ -37,7 +47,18 @@ export const registry: Record<SlotName, SlotEntry[]> = {
   'activity.summary': [],
   'watch.glances': [],
   'watch.notifications': [],
+  'phone.overlay': [{ feature: 'workoutBuddies', component: BuddyOverlay }],
+  'stage.controls': [{ feature: 'workoutBuddies', component: BuddyStageControls }],
 };
+
+// Extra phone screens added by features: route name → component (opened with nav.push(name, params)).
+export const featureScreens: Record<string, React.ComponentType<{ params: any }>> = {
+  workoutBuddies: WorkoutBuddiesScreen,
+};
+
+// Called by "Reset demo" so feature-owned state is cleared too.
+export const resetHooks: Array<() => void> = [buddyStore.reset, feedbackStore.reset];
+export function runResetHooks() { resetHooks.forEach(h => h()); }
 
 export function Slot({ name, ...props }: { name: SlotName } & Record<string, unknown>) {
   const entries = registry[name].filter(e => isOn(e.feature));

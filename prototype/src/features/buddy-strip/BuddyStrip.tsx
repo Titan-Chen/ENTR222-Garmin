@@ -1,68 +1,96 @@
-import { useState } from 'react';
+import { Check, Clock, X, EyeOff } from 'lucide-react';
 import { useStore } from '../../store';
 import { useNav } from '../../phone/nav';
 import { Avatar } from '../../components/common';
 import { personById } from '../../data/people';
-import { buddyStatuses, getRecommendation, REC_COLORS } from './buddies';
+import { todayHealth } from '../../data/health';
+import { buddyStatuses } from './buddies';
+import { friendLevel } from './bothReady';
+import { buddyStore, useBuddies, type Invite } from './buddyStore';
+import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
 
 // NEW FEATURE (flag: workoutBuddies, slot: home.afterGlance)
-// Compact "Friends Today" row on Home: each connection's avatar, first name and
-// workout recommendation (Hard / Easy / Rest from their Body Battery + Sleep Score).
-// Tap a friend to cheer them on (once per friend per day). "See All" opens Connections.
-// Carried over from the team's first friends mockup.
+// "Workout Buddies" card on Home: your chosen buddies (3–5) and their Go hard / Go light / Recover
+// status, your sharing status, and your workout invites. Tap a buddy to invite or cheer.
 export function BuddyStrip() {
-  const { state, dispatch } = useStore();
+  const { state } = useStore();
   const nav = useNav();
-  const [cheered, setCheered] = useState<string[]>([]);
-  const [popping, setPopping] = useState<string | null>(null);
-  const buddies = buddyStatuses.filter(b => state.connections.includes(b.personId));
-  if (buddies.length === 0) return null;
-
-  const cheer = (id: string) => {
-    const first = personById(id).name.split(' ')[0];
-    if (cheered.includes(id)) {
-      dispatch({ type: 'toast', text: `You already cheered on ${first} today` });
-      return;
-    }
-    setCheered(c => [...c, id]);
-    setPopping(id);
-    window.setTimeout(() => setPopping(null), 450);
-    dispatch({ type: 'toast', text: `👏 You cheered on ${first}!` });
-  };
+  const b = useBuddies();
+  const buddies = b.buddies.filter(id => state.connections.includes(id) && buddyStatuses.some(s => s.personId === id));
+  const me = computeReadiness(todayHealth, state.activities);
 
   return (
     <>
-      <style>{`@keyframes cheerPop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }`}</style>
       <div className="section-title">
-        Friends Today
-        <button className="link" onClick={() => nav.push('connections')}>See All</button>
+        Workout Buddies
+        <button className="link" onClick={() => nav.push('workoutBuddies')}>Edit</button>
       </div>
       <div className="pad">
         <div className="card" style={{ padding: '12px 6px 10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${buddies.length}, 1fr)` }}>
-            {buddies.map(b => {
-              const p = personById(b.personId);
-              const rec = getRecommendation(b.bodyBattery, b.sleepScore);
-              const color = REC_COLORS[rec.type];
-              const done = cheered.includes(b.personId);
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(buddies.length, 3)}, 1fr)` }}>
+            {buddies.map(id => {
+              const p = personById(id);
+              const level = friendLevel(id)!;
+              const color = LEVEL_COLOR[level];
               return (
-                <button key={b.personId} onClick={() => cheer(b.personId)} aria-label={`Cheer on ${p.name}`}
+                <button key={id} onClick={() => buddyStore.openSheet('buddy', id)} aria-label={`${p.name}, ${LEVEL_LABEL[level]}`}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <span style={{ position: 'relative', borderRadius: '50%', padding: 2, border: `2px solid ${color}`, animation: popping === b.personId ? 'cheerPop .45s ease-out' : undefined }}>
+                  <span style={{ position: 'relative', borderRadius: '50%', padding: 2, border: `2px solid ${color}` }}>
                     <Avatar person={p} size={34} />
-                    {done && (
+                    {b.cheered.includes(id) && (
                       <span style={{ position: 'absolute', right: -6, bottom: -4, width: 20, height: 20, borderRadius: 10, background: 'var(--gc-surface-3)', border: '2px solid var(--gc-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>👏</span>
                     )}
                   </span>
                   <span className="tiny" style={{ color: 'var(--gc-text)' }}>{p.name.split(' ')[0]}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color }}>{rec.title}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color }}>{LEVEL_LABEL[level]}</span>
                 </button>
               );
             })}
           </div>
-          <div className="tiny" style={{ textAlign: 'center', marginTop: 8, color: 'var(--gc-text-3)' }}>Tap a friend to cheer them on</div>
+          <div className="tiny" style={{ textAlign: 'center', marginTop: 8, color: 'var(--gc-text-3)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4 }}>
+            {b.sharing
+              ? <>Buddies can see you're <b style={{ color: LEVEL_COLOR[me.level] }}>{LEVEL_LABEL[me.level]}</b> · Tap a buddy to invite or cheer</>
+              : <><EyeOff size={12} /> Your readiness is hidden from buddies · Tap a buddy to invite or cheer</>}
+          </div>
+          {b.invites.length > 0 && (
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--gc-separator)', padding: '6px 8px 0' }}>
+              {b.invites.map(inv => <InviteRow key={inv.id} inv={inv} />)}
+            </div>
+          )}
         </div>
       </div>
     </>
   );
 }
+
+export function InviteRow({ inv }: { inv: Invite }) {
+  const p = personById(inv.personId);
+  const first = p.name.split(' ')[0];
+  const status = inv.status === 'accepted'
+    ? { icon: <Check size={14} color="var(--gc-green)" />, text: inv.direction === 'out' ? `${first} is in` : "You're in", color: 'var(--gc-green)' }
+    : inv.status === 'declined'
+      ? { icon: <X size={14} color="var(--gc-text-3)" />, text: inv.direction === 'out' ? `${first} can't make it` : 'You declined', color: 'var(--gc-text-3)' }
+      : inv.status === 'incoming'
+        ? { icon: <Clock size={14} color="#f5b83d" />, text: 'Waiting for you', color: '#f5b83d' }
+        : { icon: <Clock size={14} color="var(--gc-text-2)" />, text: `Waiting for ${first}`, color: 'var(--gc-text-2)' };
+  return (
+    <div className="row" style={{ padding: '6px 0', gap: 10 }}>
+      <Avatar person={p} size={26} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="small" style={{ fontWeight: 600 }}>{inv.activity} with {first}</div>
+        <div className="tiny">{inv.when.label} · {inv.place}{inv.reply ? ` · “${inv.reply}”` : ''}</div>
+      </div>
+      {inv.status === 'incoming' ? (
+        <span className="row" style={{ gap: 6 }}>
+          <button className="btn-outline" style={{ padding: '4px 10px' }} onClick={() => respondToInvite(inv.id, 'Accept')}>Accept</button>
+        </span>
+      ) : (
+        <span className="row tiny" style={{ gap: 4, color: status.color, fontWeight: 600 }}>{status.icon}{status.text}</span>
+      )}
+    </div>
+  );
+}
+
+// Set by BuddyOverlay so rows and banners can respond with access to the app store.
+export let respondToInvite: (id: string, action: 'Accept' | 'Decline') => void = () => {};
+export function setRespondHandler(fn: typeof respondToInvite) { respondToInvite = fn; }

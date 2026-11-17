@@ -11,6 +11,7 @@
  *  - weeklyHealth:     7-day readiness, stress and sleep on one screen
  *  - strengthAware:    readiness + summaries that count lifting and pickup sports
  *  - workoutBuddies:   buddy list, readiness sharing, "Both ready", "Lift with me at 6?" invites, streaks
+ *  - bothReady:        "You and Peter are both Go light" prompt + phone banner + watch alert
  *  - watchAlerts:      matching readiness glance + invite alerts on the watch
  *
  * Flags can also be turned on from the URL for user testing, e.g. ?features=dailyReadiness,workoutBuddies
@@ -21,7 +22,8 @@ export const FEATURES = {
   feelsOff: true,         // ON: confidence + "Doesn't feel right?" on Stress and Daily Readiness (src/features/feels-off)
   weeklyHealth: false,
   strengthAware: false,
-  workoutBuddies: true,   // ON: compact "Friends Today" row on Home, below At a Glance (src/features/buddy-strip)
+  workoutBuddies: true,   // ON: Workout Buddies card + picker, sharing toggle, invites (phone + watch) (src/features/buddy-strip)
+  bothReady: true,        // ON: "Both ready" prompt on Daily Readiness + one-time phone/watch alert
   watchAlerts: false,
 };
 

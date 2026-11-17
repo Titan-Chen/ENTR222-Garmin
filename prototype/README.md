@@ -9,9 +9,14 @@
 |---|---|---|---|
 | Daily Readiness card | `dailyReadiness` (on) | Top of Home (`src/features/readiness/`) | One plain answer for today (Go hard / Go light / Recover) with a one-line reason and a suggestion. "Why?" expands the five factors behind it (Sleep, Body Battery, HRV, Recent Activity incl. lifting and pickup games, Stress). Simple weighted formula in `readiness.ts`; wording includes a wellness-not-medical note. |
 | Confidence + "Doesn't feel right?" | `feelsOff` (on) | Stress screen (Day) and the Daily Readiness card (`src/features/feels-off/`) | Stress shows a likely range (e.g. 24–40) and a confidence tag; Daily Readiness shows a confidence tag, with the reason under "Why?" (how close the score is to the next cut-off). "Doesn't feel right?" opens a sheet: how you actually feel, optional reasons and a note, then a thank-you with "3 of 5 check-ins until your readings are personalized". Afterwards a "You said…" note shows on the reading. Carried over from the team's stress-feedback prototype. |
-| Friends Today buddy strip | `workoutBuddies` (on) | Home, below At a Glance (`src/features/buddy-strip/`) | One slim row with each connection's avatar, first name and workout recommendation (Go hard / Go light / Recover, from their Body Battery and Sleep Score; same labels as the Daily Readiness card). Tap a friend to cheer them on (their avatar pops and gets a 👏 badge, once per friend). See All opens Connections. Carried over from the team's first friends mockup, using the same rule. |
+| Workout Buddies | `workoutBuddies` (on) | Home, below At a Glance (`src/features/buddy-strip/`) | Your chosen buddies (pick up to 5 under **Edit**) with their Go hard / Go light / Recover status, and a **Share my readiness** toggle. Tap a buddy → **Invite to work out** (activity, time, place, editable "Lift with me at 6?") or **Cheer**. Friends reply after a few seconds (anyone on Recover declines); accepted invites go on your Calendar and show on the watch. Your invites and their status are listed on the card. |
+| Both ready | `bothReady` (on) | Inside the Daily Readiness card + phone banner + watch | When a buddy's answer matches yours (and sharing is on): "Peter is Go light too · Invite". Also fires once as a phone notification and a watch alert ~6 s after opening (Invite / Not now; inviting from the watch sends "Lift with me at 6?"). |
 
-Everything else (including Garmin's own Training Readiness and the rest of Home) still matches the current Garmin Connect app. Add `?features=none` to the URL to hide all new features and see the plain baseline.
+Everything else (including Garmin's own Training Readiness and the rest of Home) still matches the current Garmin Connect app.
+
+**Demo buttons above the devices:** "Ethan invites you to work out" sends an invite to your watch and phone (Accept / Decline on either; on the watch use UP/DOWN and START). "Show 'Both ready' alert" fires the alert again. "Reset demo" clears everything, including invites and feedback.
+
+**Core flow for testing:** Home → Daily Readiness says *Go light* → "Peter is Go light too" → **Invite** → pick time/place → **Send invite** → Peter accepts → it's on your Calendar and your watch. Add `?features=none` to the URL to hide all new features and see the plain baseline.
 
 ## About the starting point
 

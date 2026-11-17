@@ -8,7 +8,12 @@ import { DEFAULT_GLANCE, type MetricId } from './phone/metrics';
 // One shared store for phone + watch. New features add fields/actions here
 // (or keep their own store) — the baseline only models what the current app does.
 
-export interface WatchNotification { id: string; from: string; text: string; app: string }
+export interface WatchNotification {
+  id: string; from: string; text: string; app: string;
+  // Optional actions (e.g. Accept / Decline). UP/DOWN picks one, START chooses it, BACK dismisses.
+  actions?: string[];
+  onAction?: (action: string) => void;
+}
 export interface ScheduledItem { id: string; date: string; title: string; note?: string }
 
 export interface State {
