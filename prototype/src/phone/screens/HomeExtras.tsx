@@ -4,6 +4,7 @@ import { NavBar, Avatar } from '../../components/common';
 import { GlanceCard } from './HomeScreen';
 import { ALL_METRICS, METRICS, type MetricId } from '../metrics';
 import { me } from '../../data/people';
+import { isOn } from '../../features';
 import { levelInfo } from '../../data/social';
 
 export function AllMetricsScreen() {
@@ -44,7 +45,7 @@ export function EditHomeScreen() {
       <div className="scroll">
         <div className="list-header">Sections</div>
         <div className="pad"><div className="list">
-          {(Object.keys(SECTION_LABELS) as HomeSection[]).map(k => (
+          {(Object.keys(SECTION_LABELS) as HomeSection[]).filter(k => !(k === 'inFocus' && isOn('noInFocus'))).map(k => (
             <div key={k} className="list-row">
               <span className="grow title">{SECTION_LABELS[k]}</span>
               <Toggle on={state.home.sections[k]} onClick={() => dispatch({ type: 'toggleHomeSection', section: k })} />

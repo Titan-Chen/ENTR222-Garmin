@@ -25,6 +25,7 @@ export const FEATURES = {
   workoutBuddies: true,   // ON: Workout Buddies card + picker, sharing toggle, invites (phone + watch) (src/features/buddy-strip)
   bothReady: true,        // ON: "Both ready" prompt on Daily Readiness + one-time phone/watch alert
   watchAlerts: false,
+  noInFocus: true,           // ON: hide the In Focus carousel on Home (it repeats At a Glance); Sleep Coach stays
   challengeLeaderboard: true, // ON: bigger active-challenge cards on the Challenges tab showing every friend's progress (src/features/challenge-leaderboard)
 };
 

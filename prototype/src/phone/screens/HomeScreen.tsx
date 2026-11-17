@@ -10,6 +10,7 @@ import { fmtDuration, fmtHrMin, relDay, isoDate, today, timeOf, shortDate } from
 import { sportLabel } from '../../data/activities';
 import { METRICS, type MetricId } from '../metrics';
 import { Slot } from '../../slots';
+import { isOn } from '../../features';
 
 // HOME TAB (Garmin Connect 5.x "Home"): Today's Activity → In Focus → (Sleep Coach) → At a Glance
 // → Last 7 Days → Challenges / Events. TODO verify against screenshot: section titles and order.
@@ -33,8 +34,8 @@ export function HomeScreen() {
       <div className="scroll">
         <Slot name="home.top" />
         {s.todaysActivity && <TodaysActivity />}
-        {s.inFocus && <InFocus />}
-        {s.inFocus && <SleepCoachStrip />}
+        {s.inFocus && !isOn('noInFocus') && <InFocus />}
+        {(s.inFocus || isOn('noInFocus')) && <SleepCoachStrip />}
         {s.atAGlance && <AtAGlance glance={state.home.glance} />}
         <Slot name="home.afterGlance" />
         {s.last7Days && <Last7Days />}
