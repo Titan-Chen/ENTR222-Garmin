@@ -12,7 +12,8 @@ import { setRespondHandler } from './BuddyStrip';
 import {
   ACTIVITIES, PLACES, WHEN_OPTIONS, buddyStore, inviteMessage, useBuddies, type Invite,
 } from './buddyStore';
-import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { useMyReadiness } from '../readiness/myReadiness';
 
 // Always-mounted layer over the phone (slot: phone.overlay) for the Workout Buddies feature:
 //  - buddy menu + invite composer sheets
@@ -29,7 +30,7 @@ export function BuddyOverlay() {
   const { state, dispatch } = useStore();
   const b = useBuddies();
   const replyTimers = useRef<Set<string>>(new Set());
-  const me = computeReadiness(todayHealth, state.activities);
+  const me = useMyReadiness();
 
   // Accept / decline an invite (used by watch actions, banner buttons and the Home card).
   const respond = (id: string, action: 'Accept' | 'Decline') => {

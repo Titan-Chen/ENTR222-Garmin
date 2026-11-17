@@ -18,6 +18,7 @@ const emit = () => listeners.forEach(l => l());
 export const feedbackStore = {
   add(e: FeedbackEntry) { entries = [...entries.filter(x => x.target !== e.target), e]; emit(); },
   get(target: Target) { return entries.find(e => e.target === target); },
+  remove(target: Target) { entries = entries.filter(x => x.target !== target); emit(); },
   reset() { entries = []; emit(); },
   count() { return EARLIER_CHECKINS + entries.length; },
   subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },

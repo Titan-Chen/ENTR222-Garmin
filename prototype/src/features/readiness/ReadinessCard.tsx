@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Flame, Footprints, BedDouble } from 'lucide-react';
-import { useStore } from '../../store';
-import { todayHealth } from '../../data/health';
-import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL, LEVEL_SUGGESTION, type ReadinessLevel } from './readiness';
+import { LEVEL_COLOR, LEVEL_LABEL, LEVEL_SUGGESTION, type ReadinessLevel } from './readiness';
+import { useMyReadiness, FELT_OPTIONS } from './myReadiness';
+import { feedbackStore } from '../feels-off/feedbackStore';
 import { isOn } from '../../features';
 import { FeelsOffButton, FeelsOffSheet, FlagNote } from '../feels-off/FeelsOffSheet';
 import { useFeedback } from '../feels-off/feedbackStore';
@@ -16,12 +16,11 @@ import { ReadinessBuddies } from '../buddy-strip/ReadinessBuddies';
 const ICON: Record<ReadinessLevel, React.ComponentType<any>> = { hard: Flame, light: Footprints, recover: BedDouble };
 
 export function ReadinessCard() {
-  const { state } = useStore();
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const fb = useFeedback();
   const showFeelsOff = isOn('feelsOff');   // confidence + "Doesn't feel right?" (feelsOff flag)
-  const r = computeReadiness(todayHealth, state.activities);
+  const r = useMyReadiness();   // your answer from "Doesn't feel right?" replaces Garmin's, if different
   const flagged = fb.get('readiness');
   const confColor = r.confidence === 'High' ? 'var(--gc-green)' : r.confidence === 'Moderate' ? '#f5b83d' : '#ff8a3d';
   const color = LEVEL_COLOR[r.level];
@@ -38,8 +37,8 @@ export function ReadinessCard() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="between">
-                <span className="tiny">Today's suggestion</span>
-                {showFeelsOff && <span className="chip" style={{ color: confColor, background: 'rgba(255,255,255,.06)' }}>{r.confidence} confidence</span>}
+                <span className="tiny">{r.overridden ? 'Based on how you feel' : "Today's suggestion"}</span>
+                {showFeelsOff && !r.overridden && <span className="chip" style={{ color: confColor, background: 'rgba(255,255,255,.06)' }}>{r.confidence} confidence</span>}
               </div>
               <div style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1.15 }}>{LEVEL_LABEL[r.level]}</div>
             </div>
@@ -48,7 +47,13 @@ export function ReadinessCard() {
           <div className="small muted" style={{ marginTop: 4 }}>{LEVEL_SUGGESTION[r.level]}</div>
           {/* Workout buddies live inside this card so working out together is the first thing you see. */}
           {isOn('workoutBuddies') ? <ReadinessBuddies level={r.level} /> : isOn('bothReady') && <BothReadyPrompt level={r.level} />}
-          {showFeelsOff && flagged && <FlagNote text={`You said: ${flagged.felt}${flagged.reasons.length ? ` · ${flagged.reasons.join(', ')}` : ''}`} />}
+          {showFeelsOff && flagged && r.overridden && (
+            <div className="tiny" style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(17,169,237,.1)', color: '#bfe6fa', lineHeight: 1.45 }}>
+              ⚑ Garmin suggested <b style={{ color: LEVEL_COLOR[r.garminLevel] }}>{LEVEL_LABEL[r.garminLevel]}</b>, but you said “{flagged.felt}”{flagged.reasons.length ? ` (${flagged.reasons.join(', ').toLowerCase()})` : ''}, so today is set to {LEVEL_LABEL[r.level]}.{' '}
+              <button style={{ color: 'var(--gc-blue)', fontWeight: 600 }} onClick={() => feedbackStore.remove('readiness')}>Use Garmin's suggestion</button>
+            </div>
+          )}
+          {showFeelsOff && flagged && !r.overridden && <FlagNote text={`You said: ${flagged.felt}${flagged.reasons.length ? ` · ${flagged.reasons.join(', ')}` : ''}`} />}
 
           <button onClick={() => setOpen(o => !o)} className="row" aria-expanded={open}
             style={{ marginTop: 12, width: '100%', justifyContent: 'center', gap: 4, color: 'var(--gc-blue)', fontSize: 13, fontWeight: 600, paddingTop: 10, borderTop: '1px solid var(--gc-separator)' }}>
@@ -84,12 +89,8 @@ export function ReadinessCard() {
         <FeelsOffSheet
           target="readiness"
           title="How do you actually feel today?"
-          measured={`Garmin suggested ${LEVEL_LABEL[r.level]} (${r.confidence.toLowerCase()} confidence)`}
-          options={[
-            { label: 'Ready to go hard', color: LEVEL_COLOR.hard },
-            { label: 'Okay, but want to take it light', color: LEVEL_COLOR.light },
-            { label: 'I need to recover', color: LEVEL_COLOR.recover },
-          ]}
+          measured={`Garmin suggested ${LEVEL_LABEL[r.garminLevel]} (${r.confidence.toLowerCase()} confidence)`}
+          options={FELT_OPTIONS.map(({ label, color }) => ({ label, color }))}
           reasons={['Sore muscles', 'Slept badly', 'Stressed', 'Feeling sick', 'Feel great', 'Busy day']}
           onClose={() => setSheet(false)}
         />

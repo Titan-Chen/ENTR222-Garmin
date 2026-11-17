@@ -94,6 +94,7 @@ function SelectedBuddy({ id, myLevel, isMatch }: { id: string; myLevel: Readines
   else if (inv?.status === 'accepted') line = <span style={{ color: 'var(--gc-green)', fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}><Check size={12} /> {name} is in: {inv.activity}, {inv.when.label}</span>;
   else if (inv?.status === 'declined') line = `${name} can't make it this time`;
   else if (lv === 'recover') line = `${name} is recovering today. Send a cheer instead?`;
+  else if (myLevel === 'recover') line = `You're recovering today. Invite ${name} to something easy, like a walk?`;
   else if (isMatch) line = `${name} is ${LEVEL_LABEL[myLevel]} too. Work out together today?`;
   else line = `${name} is ${LEVEL_LABEL[lv]}, you're ${LEVEL_LABEL[myLevel]}. Invite anyway?`;
 

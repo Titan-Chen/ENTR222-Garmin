@@ -7,13 +7,14 @@ import { todayHealth } from '../../data/health';
 import { buddyStatuses } from './buddies';
 import { friendLevel } from './bothReady';
 import { buddyStore, useBuddies, MAX_BUDDIES } from './buddyStore';
-import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { useMyReadiness } from '../readiness/myReadiness';
 
 // NEW SCREEN: pick 3–5 workout buddies and choose whether they can see your readiness.
 export function WorkoutBuddiesScreen() {
   const { state, dispatch } = useStore();
   const b = useBuddies();
-  const me = computeReadiness(todayHealth, state.activities);
+  const me = useMyReadiness();
   const candidates = state.connections.filter(id => buddyStatuses.some(s => s.personId === id));
 
   const toggle = (id: string) => {

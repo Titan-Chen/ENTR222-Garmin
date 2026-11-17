@@ -7,7 +7,8 @@ import { todayHealth } from '../../data/health';
 import { buddyStatuses } from './buddies';
 import { friendLevel } from './bothReady';
 import { buddyStore, useBuddies, type Invite } from './buddyStore';
-import { computeReadiness, LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { LEVEL_COLOR, LEVEL_LABEL } from '../readiness/readiness';
+import { useMyReadiness } from '../readiness/myReadiness';
 import { isOn } from '../../features';
 
 // NEW FEATURE (flag: workoutBuddies, slot: home.afterGlance)
@@ -20,7 +21,7 @@ export function BuddyStrip() {
   const b = useBuddies();
   if (isOn('dailyReadiness')) return null;
   const buddies = b.buddies.filter(id => state.connections.includes(id) && buddyStatuses.some(s => s.personId === id));
-  const me = computeReadiness(todayHealth, state.activities);
+  const me = useMyReadiness();
 
   return (
     <>
