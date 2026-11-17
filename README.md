@@ -1,29 +1,22 @@
-# Garmin Connect prototype: "Doesn't feel right?" stress feedback
+# ENTR222 Garmin Connect prototype
 
-A clickable prototype for ENTR 222 of a new feature in the Garmin Connect phone app. Users can flag a stress reading that doesn't match how they feel (for example, "Garmin says medium stress, I feel fine") so the app can learn from it. Each reading also shows a confidence range.
+A clickable prototype of the Garmin Connect iPhone app with a paired watch, built for ENTR 222 by Titan Chen, Sara Kalra, Olivia Qiu and Michael Zito. It adds new features (Daily Readiness, "Doesn't feel right?" stress feedback, Workout Buddies and "Both ready") on top of a recreation of how the app works today.
 
 This is a class project. It is not affiliated with or made by Garmin, and all the data is made up.
 
-## Try it
+## Open it
 
-Open `index.html` in a browser (or the GitHub Pages link). On a laptop it appears inside a phone frame; on a phone it fills the screen.
+- **No setup:** double-click `prototype/Open Prototype.html`. It is one self-contained file you can also send to user testers.
+- **GitHub Pages:** the site root redirects to `prototype/dist/`.
+- **Baseline only:** add `?features=none` to the URL to hide all new features.
 
-1. On **My Day**, tap the **Stress** card.
-2. The reading at the top now shows a **likely range** and a **confidence level**. Tap any bar in the chart to see that reading.
-3. Tap **Doesn't feel right?**, pick how you actually feel, optionally add reasons and a note, and send.
-4. The reading gets a flag, and the **Personalizing your stress** card counts your check-ins toward a personalized baseline.
+Setup, features and the demo flow are in [`prototype/README.md`](prototype/README.md).
 
-Use **Reset demo** at the bottom of the Stress screen to clear your feedback.
+## What's where
 
-## What's new compared to the real app
-
-- **Likely range and confidence** on each stress reading (e.g. "49–67, Moderate confidence"), with a short reason why.
-- **"Doesn't feel right?" button** that opens a feedback sheet.
-- **Flags on the chart** for readings you've given feedback on.
-- **Personalizing your stress** card that shows the app learning from your feedback.
-
-## Files
-
-- `index.html`: the screens (My Day, Stress, feedback sheet)
-- `style.css`: the dark Garmin Connect–style look
-- `script.js`: the fake stress data, chart drawing, and feedback logic
+| Location | Contents |
+|---|---|
+| `prototype/` | The working copy (React + Vite). Make changes here. |
+| `baseline-prototype/` | The untouched "current app" version, used for comparison in user tests. Don't edit it. |
+| `baseline-connect-prototype` branch | The same baseline on its own branch. |
+| `stress-feedback-prototype` branch | The team's first single-page stress-feedback demo. It has since been rebuilt in `prototype/src/features/feels-off/`. |
